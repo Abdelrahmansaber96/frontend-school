@@ -68,6 +68,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
+  if (hasSession && pathname === '/') {
+    const appUrl = req.nextUrl.clone();
+    appUrl.pathname = getDefaultAppRoute(accessRole);
+    return NextResponse.redirect(appUrl);
+  }
+
   if (hasSession && pathname === '/dashboard' && accessRole === 'student') {
     const portalUrl = req.nextUrl.clone();
     portalUrl.pathname = '/portal';
