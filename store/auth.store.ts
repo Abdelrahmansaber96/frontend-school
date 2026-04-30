@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { clearFrontendAuthCookie, syncFrontendAuthCookie } from '@/lib/auth-session';
+import { clearFrontendSessionTokens, syncFrontendAuthCookie } from '@/lib/auth-session';
 import { User } from '@/types';
 import { disconnectSocket } from '@/lib/socket';
 
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthStore>()(
 
       clearAuth: () => {
         disconnectSocket();
-        clearFrontendAuthCookie();
+        clearFrontendSessionTokens();
         set({ user: null, isAuthenticated: false });
       },
     }),
