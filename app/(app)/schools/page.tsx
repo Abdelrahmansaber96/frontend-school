@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Building2, Globe, Mail, PencilLine, Phone, Plus } from 'lucide-react';
+import { Building2, Mail, PencilLine, Phone, Plus } from 'lucide-react';
 import { schoolsApi } from '@/lib/api';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
@@ -24,7 +24,6 @@ import Badge from '@/components/ui/Badge';
 import AlertBanner from '@/components/ui/AlertBanner';
 import RestrictedAccessState from '@/components/ui/RestrictedAccessState';
 
-const SUBDOMAIN_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const emailSchema = z.string().email();
 
 const requiredNameField = z.string().trim().min(2, 'Min 2 characters').max(100, 'Max 100 characters');
@@ -41,14 +40,6 @@ const optionalPhoneField = z.string().trim().max(20, 'Max 20 digits').refine(
 const optionalEmailField = z.string().trim().refine(
   (value) => value === '' || emailSchema.safeParse(value).success,
   'Invalid email',
-);
-const optionalSubdomainField = z.string().trim().refine(
-  (value) => value === '' || (value.length >= 3 && SUBDOMAIN_PATTERN.test(value)),
-  'Lowercase letters, numbers, hyphens only',
-);
-const requiredSubdomainField = z.string().trim().min(3, 'Min 3 chars').regex(
-  SUBDOMAIN_PATTERN,
-  'Lowercase letters, numbers, hyphens only',
 );
 const academicYearField = z.string().trim().regex(/^\d{4}-\d{4}$/, 'Use YYYY-YYYY');
 
@@ -69,7 +60,6 @@ const operationalSchema = {
 const createSchema = z.object({
   name: requiredNameField,
   nameAr: optionalNameField,
-  subdomain: optionalSubdomainField,
   address: requiredAddressField,
   phone: requiredPhoneField,
   email: optionalEmailField,
@@ -84,7 +74,6 @@ const createSchema = z.object({
 const editSchema = z.object({
   name: requiredNameField,
   nameAr: optionalNameField,
-  subdomain: requiredSubdomainField,
   address: requiredAddressField,
   phone: requiredPhoneField,
   email: optionalEmailField,
@@ -114,7 +103,6 @@ const emptyOperationalValues = {
 const createDefaultValues: CreateForm = {
   name: '',
   nameAr: '',
-  subdomain: '',
   address: '',
   phone: '',
   email: '',
@@ -129,7 +117,6 @@ const createDefaultValues: CreateForm = {
 const editDefaultValues: EditForm = {
   name: '',
   nameAr: '',
-  subdomain: '',
   address: '',
   phone: '',
   email: '',
@@ -220,7 +207,6 @@ const buildAdministrationPayload = (values: EditForm | CreateForm, includeBlankF
 const buildBaseSchoolPayload = (values: EditForm | CreateForm) => ({
   name: values.name.trim(),
   nameAr: values.name.trim() ? values.nameAr.trim() || null : null,
-  subdomain: values.subdomain.trim() || undefined,
   address: values.address.trim(),
   phone: values.phone.trim(),
   email: values.email.trim() || null,
@@ -240,7 +226,6 @@ const buildUpdateSchoolPayload = (values: EditForm) => ({
 const mapSchoolToEditValues = (school: School): EditForm => ({
   name: school.name ?? '',
   nameAr: school.nameAr ?? '',
-  subdomain: school.subdomain ?? '',
   address: school.address ?? '',
   phone: school.phone ?? '',
   email: school.email ?? '',
@@ -406,16 +391,6 @@ export default function SchoolsPage() {
       ),
     },
     {
-      key: 'subdomain',
-      header: 'النطاق',
-      render: (school) => (
-        <span className="inline-flex items-center gap-1 text-sm text-ink-dim" dir="ltr">
-          <Globe className="h-3 w-3 text-gold-500" />
-          {school.subdomain}
-        </span>
-      ),
-    },
-    {
       key: 'administration',
       header: 'الإدارة التشغيلية',
       className: 'min-w-[180px]',
@@ -577,15 +552,6 @@ export default function SchoolsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="اسم المدرسة" {...registerCreate('name')} error={createErrors.name?.message} />
               <Input label="الاسم الإضافي أو المختصر" {...registerCreate('nameAr')} error={createErrors.nameAr?.message} />
-              <Input
-                label="النطاق الفرعي (Subdomain)"
-                placeholder="alnoor"
-                dir="ltr"
-                className="font-mono text-left"
-                {...registerCreate('subdomain')}
-                error={createErrors.subdomain?.message}
-                hint="يمكن تركه فارغًا ليُولد تلقائيًا"
-              />
               <Input label="العام الدراسي" {...registerCreate('academicYear')} error={createErrors.academicYear?.message} />
               <Input label="العنوان" {...registerCreate('address')} error={createErrors.address?.message} className="sm:col-span-2" />
               <Input label="الهاتف الرئيسي" {...registerCreate('phone')} error={createErrors.phone?.message} />
@@ -660,10 +626,6 @@ export default function SchoolsPage() {
                   <Badge variant={selected.isActive ? 'success' : 'danger'}>
                     {selected.isActive ? 'نشط' : 'غير نشط'}
                   </Badge>
-                  <span className="inline-flex items-center gap-1 text-[12px] text-ink-dim font-mono" dir="ltr">
-                    <Globe className="h-3 w-3 text-gold-500" />
-                    {selected.subdomain}.platform.com
-                  </span>
                 </div>
               </div>
             </div>
@@ -747,7 +709,6 @@ export default function SchoolsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="اسم المدرسة" {...registerEdit('name')} error={editErrors.name?.message} />
               <Input label="الاسم الإضافي أو المختصر" {...registerEdit('nameAr')} error={editErrors.nameAr?.message} />
-              <Input label="النطاق الفرعي" dir="ltr" className="font-mono text-left" {...registerEdit('subdomain')} error={editErrors.subdomain?.message} />
               <Input label="العام الدراسي" {...registerEdit('academicYear')} error={editErrors.academicYear?.message} />
               <Input label="العنوان" {...registerEdit('address')} error={editErrors.address?.message} className="sm:col-span-2" />
               <Input label="الهاتف الرئيسي" {...registerEdit('phone')} error={editErrors.phone?.message} />

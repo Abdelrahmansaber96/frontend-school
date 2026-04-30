@@ -1,57 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  decodeAccessTokenRole,
+  FRONTEND_ACCESS_TOKEN_COOKIE,
+  FRONTEND_AUTH_COOKIE,
+  getFrontendAuthRole,
+} from '@/lib/auth-session-shared';
 import { getDefaultAppRoute } from '@/lib/app-routes';
 
 const PUBLIC_PATHS = ['/'];
 const AUTH_PATHS = ['/login', '/register'];
-const PLATFORM_DOMAIN = (process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'localhost').toLowerCase();
 
 const matchesPath = (pathname: string, paths: string[]) => paths.some(
   (path) => pathname === path || (path !== '/' && pathname.startsWith(`${path}/`)),
 );
-
-const getSubdomain = (hostname: string) => {
-  const normalizedHostname = hostname.toLowerCase();
-
-  if (
-    !normalizedHostname
-    || normalizedHostname === PLATFORM_DOMAIN
-    || normalizedHostname === 'localhost'
-    || normalizedHostname === '127.0.0.1'
-  ) {
-    return null;
-  }
-
-  if (normalizedHostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
-    return normalizedHostname.slice(0, -(PLATFORM_DOMAIN.length + 1));
-  }
-
-  return null;
-};
-
-const decodeAccessTokenRole = (token?: string) => {
-  if (!token) return null;
-
-  const parts = token.split('.');
-  if (parts.length < 2) return null;
-
-  try {
-    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-    const payload = JSON.parse(atob(padded)) as { role?: string };
-    return payload.role || null;
-  } catch {
-    return null;
-  }
-};
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isPublicPath = matchesPath(pathname, PUBLIC_PATHS);
   const isAuthPath = matchesPath(pathname, AUTH_PATHS);
   const accessToken = req.cookies.get('accessToken')?.value;
-  const accessRole = decodeAccessTokenRole(accessToken);
+  const frontendAccessToken = req.cookies.get(FRONTEND_ACCESS_TOKEN_COOKIE)?.value;
+  const accessRole = decodeAccessTokenRole(accessToken) ?? decodeAccessTokenRole(frontendAccessToken);
+  const frontendAuthRole = getFrontendAuthRole(req.cookies.get(FRONTEND_AUTH_COOKIE)?.value);
+  const sessionRole = accessRole ?? frontendAuthRole;
   const hasSession = Boolean(
-    accessToken || req.cookies.get('refreshToken')?.value,
+    accessToken || frontendAccessToken || req.cookies.get('refreshToken')?.value || frontendAuthRole,
   );
 
   if (!hasSession && !isPublicPath && !isAuthPath) {
@@ -63,35 +36,24 @@ export function middleware(req: NextRequest) {
 
   if (hasSession && isAuthPath) {
     const dashboardUrl = req.nextUrl.clone();
-    dashboardUrl.pathname = getDefaultAppRoute(accessRole);
+    dashboardUrl.pathname = getDefaultAppRoute(sessionRole);
     dashboardUrl.searchParams.delete('from');
     return NextResponse.redirect(dashboardUrl);
   }
 
   if (hasSession && pathname === '/') {
     const appUrl = req.nextUrl.clone();
-    appUrl.pathname = getDefaultAppRoute(accessRole);
+    appUrl.pathname = getDefaultAppRoute(sessionRole);
     return NextResponse.redirect(appUrl);
   }
 
-  if (hasSession && pathname === '/dashboard' && accessRole === 'student') {
+  if (hasSession && pathname === '/dashboard' && sessionRole === 'student') {
     const portalUrl = req.nextUrl.clone();
     portalUrl.pathname = '/portal';
     return NextResponse.redirect(portalUrl);
   }
 
-  const requestHeaders = new Headers(req.headers);
-  const subdomain = getSubdomain(req.nextUrl.hostname);
-
-  if (subdomain) {
-    requestHeaders.set('x-school-subdomain', subdomain);
-  }
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  return NextResponse.next();
 }
 
 export const config = {

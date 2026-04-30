@@ -5,7 +5,7 @@ import { schoolsApi } from '@/lib/api';
 import { useSchoolBrandingStore } from '@/store/branding.store';
 
 /**
- * Fetches the current school branding (from subdomain or header) and applies
+ * Fetches the current school branding from the authenticated school context and applies
  * primary/secondary colors as CSS custom properties on :root so the entire
  * theme adapts per-school automatically.
  */
@@ -23,7 +23,6 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
           setBranding({
             schoolName: school.name,
             schoolNameAr: school.nameAr,
-            subdomain: school.subdomain,
             branding: school.branding,
             logo: school.logo,
           });

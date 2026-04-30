@@ -1,13 +1,27 @@
-import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosHeaders, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import {
+  clearFrontendSessionTokens,
+  getFrontendAccessToken,
+  syncFrontendAccessToken,
+} from '@/lib/auth-session';
+import { extractAccessToken, extractAccessTokenFromHeaders } from '@/lib/auth-session-shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-const PLATFORM_DOMAIN = (process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'localhost').toLowerCase();
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true, // for HttpOnly refresh token cookie
   headers: { 'Content-Type': 'application/json' },
 });
+
+type AuthAwareRequestConfig = AxiosRequestConfig & {
+  skipAuthRedirect?: boolean;
+};
+
+type InternalAuthAwareRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  skipAuthRedirect?: boolean;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -43,38 +57,18 @@ const normalizeEnvelope = <T>(payload: T): T => {
   return normalized as T;
 };
 
-const resolveSchoolSubdomain = () => {
-  if (typeof window === 'undefined') return null;
-
-  const configuredSubdomain = process.env.NEXT_PUBLIC_SCHOOL_SUBDOMAIN?.trim().toLowerCase();
-  const hostname = window.location.hostname.toLowerCase();
-
-  if (
-    hostname === PLATFORM_DOMAIN
-    || hostname === 'localhost'
-    || hostname === '127.0.0.1'
-  ) {
-    return configuredSubdomain || null;
-  }
-
-  if (hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
-    return hostname.slice(0, -(PLATFORM_DOMAIN.length + 1));
-  }
-
-  return configuredSubdomain || null;
-};
-
 api.interceptors.request.use((config) => {
-  const schoolSubdomain = resolveSchoolSubdomain();
+  const accessToken = getFrontendAccessToken();
 
-  if (schoolSubdomain) {
-    const headers = config.headers instanceof AxiosHeaders
-      ? config.headers
-      : new AxiosHeaders(config.headers);
+  const headers = config.headers instanceof AxiosHeaders
+    ? config.headers
+    : new AxiosHeaders(config.headers);
 
-    headers.set('X-School-Subdomain', schoolSubdomain);
-    config.headers = headers;
+  if (accessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
   }
+
+  config.headers = headers;
 
   return config;
 });
@@ -85,6 +79,7 @@ let failedQueue: { resolve: () => void; reject: (e: unknown) => void }[] = [];
 
 const clearPersistedAuth = () => {
   if (typeof window === 'undefined') return;
+  clearFrontendSessionTokens();
   window.localStorage.removeItem('basma-auth');
 };
 
@@ -103,11 +98,16 @@ api.interceptors.response.use(
       error.response.data = normalizeEnvelope(error.response.data);
     }
 
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAuthAwareRequestConfig;
     const requestUrl = originalRequest?.url || '';
     const isAuthRequest = requestUrl.includes('/auth/login')
       || requestUrl.includes('/auth/refresh')
       || requestUrl.includes('/auth/logout');
+    const skipAuthRedirect = Boolean(originalRequest?.skipAuthRedirect);
+
+    if (error.response?.status === 401 && skipAuthRedirect) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       if (isRefreshing) {
@@ -122,7 +122,12 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const nextAccessToken = extractAccessToken(refreshResponse.data)
+          || extractAccessTokenFromHeaders(refreshResponse.headers as Record<string, unknown> | undefined);
+        if (nextAccessToken) {
+          syncFrontendAccessToken(nextAccessToken);
+        }
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
@@ -155,7 +160,6 @@ export const authApi = {
   registerSchool: (data: {
     schoolName: string;
     schoolNameAr?: string;
-    subdomain: string;
     address: string;
     phone: string;
     email?: string;
@@ -181,7 +185,7 @@ export const schoolsApi = {
   updateCurrentProfile: (data: object) => api.patch('/schools/profile', data),
   updateSettings: (id: string, data: object) => api.patch(`/schools/${id}/settings`, data),
   delete: (id: string) => api.delete(`/schools/${id}`),
-  getCurrent: () => api.get('/schools/current'),
+  getCurrent: () => api.get('/schools/current', { skipAuthRedirect: true } as AuthAwareRequestConfig),
   updateBranding: (data: object) => api.put('/schools/branding', data),
 };
 

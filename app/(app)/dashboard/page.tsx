@@ -8,7 +8,6 @@ import {
   CalendarCheck,
   AlertCircle,
   School,
-  Globe,
   Palette,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -24,7 +23,7 @@ import { formatDate } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const { schoolName, schoolNameAr, subdomain, branding, logo, isLoaded } = useSchoolBrandingStore();
+  const { schoolName, schoolNameAr, branding, logo, isLoaded } = useSchoolBrandingStore();
   const isParentUser = hasAnyRole(user?.role, roleGroups.parents);
   const canViewAdministrativeStats = hasAnyRole(user?.role, roleGroups.schoolManagers);
   const canViewPlatformStats = hasAnyRole(user?.role, roleGroups.superAdmins);
@@ -133,12 +132,6 @@ export default function DashboardPage() {
               />
               <div>
                 <h3 className="text-[15px] font-semibold text-ink">{schoolNameAr || schoolName}</h3>
-                {subdomain && (
-                  <p className="flex items-center gap-1 mt-0.5 text-[11px] text-ink-faint" dir="ltr">
-                    <Globe className="h-3 w-3" />
-                    {subdomain}.platform.com
-                  </p>
-                )}
               </div>
             </div>
             {user?.role === 'school_admin' && (

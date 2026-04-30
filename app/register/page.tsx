@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { School, ArrowLeft, CheckCircle2, Globe, User, Building2 } from 'lucide-react';
+import { School, ArrowLeft, CheckCircle2, User, Building2 } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -14,11 +14,6 @@ import Input from '@/components/ui/Input';
 const schema = z.object({
   schoolName: z.string().min(2, 'اسم المدرسة مطلوب (حرفان على الأقل)'),
   schoolNameAr: z.string().optional(),
-  subdomain: z
-    .string()
-    .min(3, '3 أحرف على الأقل')
-    .max(63)
-    .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/, 'أحرف إنجليزية صغيرة وأرقام وشرطات فقط'),
   address: z.string().min(5, 'العنوان مطلوب'),
   phone: z.string().min(7, 'رقم جوال المدرسة مطلوب'),
   email: z.string().email('بريد إلكتروني غير صالح').optional().or(z.literal('')),
@@ -50,7 +45,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [serverError, setServerError] = useState('');
-  const [success, setSuccess] = useState<{ subdomain: string; name: string } | null>(null);
+  const [success, setSuccess] = useState<{ name: string } | null>(null);
 
   const {
     register,
@@ -63,11 +58,9 @@ export default function RegisterPage() {
     mode: 'onTouched',
   });
 
-  const subdomain = watch('subdomain');
-
   const nextStep = async () => {
     if (step === 1) {
-      const valid = await trigger(['schoolName', 'subdomain', 'address', 'phone', 'email']);
+      const valid = await trigger(['schoolName', 'address', 'phone', 'email']);
       if (valid) setStep(2);
     } else if (step === 2) {
       const valid = await trigger([
@@ -84,7 +77,6 @@ export default function RegisterPage() {
       const res = await authApi.registerSchool({
         schoolName: data.schoolName,
         schoolNameAr: data.schoolNameAr || undefined,
-        subdomain: data.subdomain,
         address: data.address,
         phone: data.phone,
         email: data.email || undefined,
@@ -97,7 +89,6 @@ export default function RegisterPage() {
         },
       });
       setSuccess({
-        subdomain: res.data.data.school.subdomain,
         name: res.data.data.school.name,
       });
     } catch (err: unknown) {
@@ -120,16 +111,6 @@ export default function RegisterPage() {
             <p className="text-[13px] text-ink-dim mb-6">
               مدرستك <span className="font-semibold text-ink">{success.name}</span> جاهزة الآن.
             </p>
-
-            <div className="rounded-xl border border-stroke bg-glaze/[0.03] p-4 mb-6 text-start">
-              <div className="flex items-center gap-2 mb-3">
-                <Globe className="h-4 w-4 text-gold-500" />
-                <span className="text-[13px] font-semibold text-ink">رابط المدرسة</span>
-              </div>
-              <code className="block rounded-lg bg-glaze/[0.06] px-3 py-2 text-[13px] text-gold-500 font-mono" dir="ltr">
-                {success.subdomain}.platform.com
-              </code>
-            </div>
 
             <div className="space-y-2">
               <Button className="w-full" onClick={() => router.push('/login')}>
@@ -205,22 +186,6 @@ export default function RegisterPage() {
                   placeholder="Al-Noor Primary School"
                   {...register('schoolNameAr')}
                 />
-                <div>
-                  <Input
-                    label="النطاق الفرعي (Subdomain)"
-                    placeholder="alnoor"
-                    error={errors.subdomain?.message}
-                    dir="ltr"
-                    className="text-left font-mono"
-                    {...register('subdomain')}
-                  />
-                  {subdomain && !errors.subdomain && (
-                    <p className="mt-1.5 text-[11px] text-ink-faint flex items-center gap-1" dir="ltr">
-                      <Globe className="h-3 w-3" />
-                      <span>{subdomain.toLowerCase()}.platform.com</span>
-                    </p>
-                  )}
-                </div>
                 <Input
                   label="العنوان"
                   placeholder="حي النزهة، الرياض"
@@ -311,9 +276,8 @@ export default function RegisterPage() {
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-[13px]">
                     <div><span className="text-ink-faint">الاسم: </span><span className="text-ink font-medium">{watch('schoolName')}</span></div>
-                    <div><span className="text-ink-faint">النطاق: </span><span className="text-ink font-medium font-mono" dir="ltr">{watch('subdomain')}</span></div>
-                    <div className="col-span-2"><span className="text-ink-faint">العنوان: </span><span className="text-ink font-medium">{watch('address')}</span></div>
                     <div><span className="text-ink-faint">الجوال: </span><span className="text-ink font-medium">{watch('phone')}</span></div>
+                    <div className="col-span-2"><span className="text-ink-faint">العنوان: </span><span className="text-ink font-medium">{watch('address')}</span></div>
                     {watch('email') && <div><span className="text-ink-faint">البريد: </span><span className="text-ink font-medium">{watch('email')}</span></div>}
                   </div>
                 </div>

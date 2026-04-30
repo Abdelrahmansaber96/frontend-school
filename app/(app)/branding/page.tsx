@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Palette, Globe, CheckCircle2, Building2, Mail, Phone, UsersRound } from 'lucide-react';
+import { Palette, CheckCircle2, Building2, Mail, Phone, UsersRound } from 'lucide-react';
 import { schoolsApi } from '@/lib/api';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
 import type { School, SchoolAdministrationContact, SchoolAdministrativeOfficeContact } from '@/types';
@@ -249,7 +249,6 @@ export default function BrandingPage() {
       setBranding({
         schoolName: updated.name,
         schoolNameAr: updated.nameAr ?? undefined,
-        subdomain: updated.subdomain,
         branding: updated.branding,
         logo: updated.logo,
       });
@@ -328,10 +327,6 @@ export default function BrandingPage() {
           <div className="min-w-[220px] flex-1">
             <h3 className="text-[15px] font-semibold text-ink">{school.name}</h3>
             {school.nameAr && <p className="text-[13px] text-ink-dim">{school.nameAr}</p>}
-            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint">
-              <Globe className="h-3 w-3" />
-              <span dir="ltr" className="font-mono">{school.subdomain}.platform.com</span>
-            </div>
             <div className="mt-3 grid gap-2 text-[12px] text-ink-muted sm:grid-cols-2">
               <div>الهاتف الرئيسي: <span className="font-medium text-ink" dir="ltr">{school.phone}</span></div>
               <div>البريد الرئيسي: <span className="font-medium text-ink" dir="ltr">{school.email || '—'}</span></div>

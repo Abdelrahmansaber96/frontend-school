@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { School } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import { getDefaultAppRoute } from '@/lib/app-routes';
+import { syncFrontendAccessToken } from '@/lib/auth-session';
+import { extractAccessToken, extractAccessTokenFromHeaders } from '@/lib/auth-session-shared';
 import { useAuthStore } from '@/store/auth.store';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -36,11 +38,19 @@ export default function LoginPage() {
     try {
       const res = await authApi.login(data);
       const { user } = res.data.data;
+      const accessToken = extractAccessToken(res.data)
+        || extractAccessTokenFromHeaders(res.headers as Record<string, unknown> | undefined);
+
+      if (accessToken) {
+        syncFrontendAccessToken(accessToken);
+      }
+
       setAuth(user);
 
       // Role-based redirect
-      if (user.mustChangePassword) return router.push('/change-password');
-      router.push(getDefaultAppRoute(user.role));
+      if (user.mustChangePassword) return router.replace('/change-password');
+      router.replace(getDefaultAppRoute(user.role));
+      router.refresh();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setServerError(error.response?.data?.message || 'فشل تسجيل الدخول. تحقّق من بياناتك.');
