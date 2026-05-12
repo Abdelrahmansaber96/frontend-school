@@ -59,6 +59,10 @@ type StudentImportResult = {
     importedCount: number;
     errorCount: number;
   };
+  errors?: Array<{
+    row: number;
+    message: string;
+  }>;
 };
 
 export default function StudentsPage() {
@@ -75,6 +79,7 @@ export default function StudentsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
+  const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const classesQuery = usePaginatedListQuery<StudentClassOption>({
@@ -196,9 +201,11 @@ export default function StudentsPage() {
     onMutate: () => {
       setImportError(null);
       setImportSummary(null);
+      setImportRowErrors([]);
     },
     onSuccess: (response) => {
       setImportSummary(response.summary);
+      setImportRowErrors(response.errors?.slice(0, 5) ?? []);
       void qc.invalidateQueries({ queryKey: ['students'] });
     },
     onError: (error) => {
@@ -355,6 +362,22 @@ export default function StudentsPage() {
           {importSummary.errorCount ? ` تعذر استيراد ${importSummary.errorCount} صف.` : ''}
           {' '}
           الأعمدة المدعومة: الاسم، رقم الهوية، رقم الجوال، الفصل، الصف.
+        </AlertBanner>
+      )}
+
+      {importRowErrors.length > 0 && (
+        <AlertBanner variant="error">
+          <div className="space-y-2">
+            <p className="font-medium">أول أخطاء الاستيراد:</p>
+            <div className="space-y-1">
+              {importRowErrors.map((item) => (
+                <p key={`${item.row}-${item.message}`}>الصف {item.row}: {item.message}</p>
+              ))}
+            </div>
+            {importSummary && importSummary.errorCount > importRowErrors.length ? (
+              <p className="text-xs opacity-80">تم عرض أول {importRowErrors.length} أخطاء فقط.</p>
+            ) : null}
+          </div>
         </AlertBanner>
       )}
 
