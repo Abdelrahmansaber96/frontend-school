@@ -193,6 +193,13 @@ export const teachersApi = {
   list: (params?: object) => api.get('/teachers', { params }),
   getById: (id: string) => api.get(`/teachers/${id}`),
   create: (data: object) => api.post('/teachers', data),
+  import: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/teachers/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   update: (id: string, data: object) => api.patch(`/teachers/${id}`, data),
   delete: (id: string) => api.delete(`/teachers/${id}`),
 };
@@ -212,6 +219,13 @@ export const studentsApi = {
   getMe: () => api.get('/students/me'),
   getById: (id: string) => api.get(`/students/${id}`),
   create: (data: object) => api.post('/students', data),
+  import: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/students/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   update: (id: string, data: object) => api.patch(`/students/${id}`, data),
   delete: (id: string) => api.delete(`/students/${id}`),
 };
@@ -307,6 +321,7 @@ export const reportsApi = {
 export const usersApi = {
   getMe: () => api.get('/users/me'),
   updateMe: (data: object) => api.patch('/users/me', data),
+  createAdministrative: (data: object) => api.post('/users/administrative', data),
   list: (params?: object) => api.get('/users', { params }),
   activate: (id: string) => api.patch(`/users/${id}/activate`),
   deactivate: (id: string) => api.patch(`/users/${id}/deactivate`),

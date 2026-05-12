@@ -133,8 +133,8 @@ export default function StudentPortalPage() {
                 <Badge variant={student.isActive ? 'success' : 'danger'}>
                   {student.isActive ? 'نشط' : 'غير نشط'}
                 </Badge>
-                <Badge variant={student.gender === 'male' ? 'info' : 'purple'}>
-                  {student.gender === 'male' ? 'ذكر' : 'أنثى'}
+                <Badge variant={student.gender === 'male' ? 'info' : student.gender === 'female' ? 'purple' : 'default'}>
+                  {student.gender === 'male' ? 'ذكر' : student.gender === 'female' ? 'أنثى' : 'غير محدد'}
                 </Badge>
               </div>
             </div>

@@ -28,10 +28,6 @@ type SubjectRecord = Subject & {
 
 const subjectSchema = z.object({
   name: z.string().trim().min(2, 'اسم المادة مطلوب ويجب أن يكون حرفين على الأقل.').max(100, 'اسم المادة طويل جدًا.'),
-  nameAr: z.string().trim().max(100, 'الاسم العربي طويل جدًا.').refine(
-    (value) => value.length === 0 || value.length >= 2,
-    'الاسم العربي يجب أن يكون حرفين على الأقل.',
-  ),
   code: z.string().trim().max(20, 'رمز المادة طويل جدًا.').regex(/^[A-Za-z0-9-]*$/, 'رمز المادة يقبل الحروف والأرقام والشرطة فقط.'),
 });
 
@@ -39,7 +35,6 @@ type SubjectFormValues = z.infer<typeof subjectSchema>;
 
 const defaultValues: SubjectFormValues = {
   name: '',
-  nameAr: '',
   code: '',
 };
 
@@ -82,8 +77,7 @@ export default function SubjectsPage() {
 
     if (editingSubject) {
       reset({
-        name: editingSubject.name ?? '',
-        nameAr: editingSubject.nameAr ?? '',
+        name: editingSubject.nameAr || editingSubject.name || '',
         code: editingSubject.code ?? '',
       });
       return;
@@ -96,7 +90,6 @@ export default function SubjectsPage() {
     mutationFn: (values: SubjectFormValues) => {
       const payload = {
         name: values.name.trim(),
-        nameAr: values.nameAr.trim() || undefined,
         code: values.code.trim() || undefined,
       };
 
@@ -144,12 +137,7 @@ export default function SubjectsPage() {
       key: 'name',
       header: 'المادة',
       render: (subject: SubjectRecord) => (
-        <div className="space-y-1">
-          <p className="font-medium text-ink">{subject.nameAr || subject.name}</p>
-          {subject.nameAr && subject.nameAr !== subject.name ? (
-            <p className="text-xs text-ink-faint">{subject.name}</p>
-          ) : null}
-        </div>
+        <p className="font-medium text-ink">{subject.nameAr || subject.name}</p>
       ),
     },
     {
@@ -295,16 +283,10 @@ export default function SubjectsPage() {
             <AlertBanner variant="error">{formError}</AlertBanner>
           )}
           <Input
-            label="اسم المادة بالإنجليزية"
-            placeholder="Mathematics"
+            label="اسم المادة"
+            placeholder="الرياضيات"
             {...register('name')}
             error={errors.name?.message}
-          />
-          <Input
-            label="اسم المادة بالعربية"
-            placeholder="الرياضيات"
-            {...register('nameAr')}
-            error={errors.nameAr?.message}
           />
           <Input
             label="رمز المادة"

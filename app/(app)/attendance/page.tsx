@@ -221,7 +221,7 @@ export default function AttendancePage() {
     },
   ];
 
-  const canRecord = user?.role === 'teacher' || user?.role === 'school_admin';
+  const canRecord = user?.role === 'teacher' || user?.role === 'school_admin' || user?.role === 'administrative';
 
   return (
     <div className="space-y-6">

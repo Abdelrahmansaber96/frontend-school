@@ -1,4 +1,4 @@
-export type Role = 'super_admin' | 'school_admin' | 'teacher' | 'parent' | 'student';
+export type Role = 'super_admin' | 'school_admin' | 'teacher' | 'parent' | 'student' | 'administrative';
 
 export interface User {
   _id: string;
@@ -161,8 +161,8 @@ export interface Student {
   schoolId: string;
   nationalId: string;
   classId: { _id: string; name: string; grade: string; section?: string };
-  parentId: { _id: string; userId: { name: { first: string; last: string }; phone: string } };
-  gender: 'male' | 'female';
+  parentId: { _id: string; userId: { name: { first: string; last: string }; phone: string } } | null;
+  gender: 'male' | 'female' | 'unspecified';
   dateOfBirth?: string;
   specialStatus?: string[];
   isActive: boolean;

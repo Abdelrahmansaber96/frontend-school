@@ -3,7 +3,7 @@ import type { Role } from '@/types';
 export const roleGroups = {
   superAdmins: ['super_admin'],
   schoolManagers: ['super_admin', 'school_admin'],
-  staff: ['school_admin', 'teacher'],
+  staff: ['school_admin', 'teacher', 'administrative'],
   reportViewers: ['super_admin', 'school_admin', 'teacher'],
   parents: ['parent'],
   students: ['student'],

@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, UserCheck, Users, UserX } from 'lucide-react';
+import { KeyRound, Plus, UserCheck, Users, UserX } from 'lucide-react';
 import { authApi, usersApi } from '@/lib/api';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
 import { formatDateTime, fullName } from '@/lib/utils';
@@ -22,6 +25,18 @@ import EmptyState from '@/components/ui/EmptyState';
 import RestrictedAccessState from '@/components/ui/RestrictedAccessState';
 import StatCard from '@/components/ui/StatCard';
 import StatusBadge from '@/components/ui/StatusBadge';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+
+const administrativeSchema = z.object({
+  firstName: z.string().trim().min(2, 'الاسم الأول مطلوب'),
+  lastName: z.string().trim().min(2, 'اسم العائلة مطلوب'),
+  nationalId: z.string().trim().min(5, 'رقم الهوية يجب أن يكون 5 خانات على الأقل'),
+  phone: z.string().trim().min(7, 'رقم الجوال يجب أن يكون 7 أرقام على الأقل'),
+  email: z.string().trim().email('البريد الإلكتروني غير صحيح').optional().or(z.literal('')),
+});
+
+type AdministrativeFormValues = z.infer<typeof administrativeSchema>;
 
 type AdminAccount = {
   _id: string;
@@ -39,14 +54,15 @@ type AdminAccount = {
 const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
   { value: 'super_admin', label: 'مشرف عام' },
   { value: 'school_admin', label: 'مدير مدرسة' },
+  { value: 'administrative', label: 'إداري' },
   { value: 'teacher', label: 'معلم' },
   { value: 'parent', label: 'ولي أمر' },
-  { value: 'student', label: 'طالب' },
 ];
 
 const ROLE_LABELS: Record<Role, string> = {
   super_admin: 'مشرف عام',
   school_admin: 'مدير مدرسة',
+  administrative: 'إداري',
   teacher: 'معلم',
   parent: 'ولي أمر',
   student: 'طالب',
@@ -55,6 +71,7 @@ const ROLE_LABELS: Record<Role, string> = {
 const ROLE_BADGE_VARIANTS: Record<Role, 'default' | 'info' | 'success' | 'warning' | 'purple'> = {
   super_admin: 'purple',
   school_admin: 'info',
+  administrative: 'default',
   teacher: 'success',
   parent: 'warning',
   student: 'default',
@@ -73,6 +90,24 @@ export default function AccountsPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [resetResult, setResetResult] = useState<{ name: string; tempPassword: string } | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createdAdministrativePassword, setCreatedAdministrativePassword] = useState<{ name: string; tempPassword: string } | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<AdministrativeFormValues>({
+    resolver: zodResolver(administrativeSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      nationalId: '',
+      phone: '',
+      email: '',
+    },
+  });
 
   const accountsQuery = usePaginatedListQuery<AdminAccount>({
     queryKey: ['accounts', page, search, roleFilter, statusFilter],
@@ -132,6 +167,34 @@ export default function AccountsPage() {
     },
     onSettled: () => {
       setBusyAction(null);
+    },
+  });
+
+  const createAdministrativeMutation = useMutation({
+    mutationFn: (values: AdministrativeFormValues) => usersApi
+      .createAdministrative({
+        name: { first: values.firstName, last: values.lastName },
+        nationalId: values.nationalId,
+        phone: values.phone,
+        email: values.email || undefined,
+      })
+      .then(getEntityPayload<{ user: AdminAccount; tempPassword?: string | null }>),
+    onMutate: () => {
+      setActionError(null);
+      setActionSuccess(null);
+    },
+    onSuccess: (response) => {
+      setCreatedAdministrativePassword({
+        name: fullName(response.user.name),
+        tempPassword: response.tempPassword ?? '—',
+      });
+      setActionSuccess(`تم إنشاء حساب إداري جديد لـ ${fullName(response.user.name)}.`);
+      setCreateModalOpen(false);
+      reset();
+      void queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, 'تعذر إنشاء الحساب الإداري.'));
     },
   });
 
@@ -290,8 +353,23 @@ export default function AccountsPage() {
       <PageHeader
         title="الحسابات"
         description="إدارة تفعيل الحسابات، مراجعة حالة الدخول، وإعادة تعيين كلمات المرور المؤقتة من مكان واحد."
-        action={hasFilters ? <Button variant="secondary" onClick={resetFilters}>إعادة ضبط الفلاتر</Button> : undefined}
+        action={
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setCreateModalOpen(true)}>
+              <Plus className="h-4 w-4" />
+              إضافة حساب إداري
+            </Button>
+            {hasFilters ? <Button variant="secondary" onClick={resetFilters}>إعادة ضبط الفلاتر</Button> : null}
+          </div>
+        }
       />
+
+      {createdAdministrativePassword && (
+        <AlertBanner variant="warning">
+          كلمة المرور المؤقتة لحساب {createdAdministrativePassword.name}:{' '}
+          <span className="font-semibold" dir="ltr">{createdAdministrativePassword.tempPassword}</span>
+        </AlertBanner>
+      )}
 
       {resetResult && (
         <AlertBanner variant="warning">
@@ -311,6 +389,29 @@ export default function AccountsPage() {
           {actionError}
         </AlertBanner>
       )}
+
+      <Modal
+        open={createModalOpen}
+        onClose={() => { setCreateModalOpen(false); reset(); }}
+        title="إضافة حساب إداري"
+        size="md"
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="secondary" onClick={() => { setCreateModalOpen(false); reset(); }}>إلغاء</Button>
+            <Button loading={isSubmitting || createAdministrativeMutation.isPending} onClick={handleSubmit((values) => createAdministrativeMutation.mutate(values))}>
+              إنشاء الحساب
+            </Button>
+          </div>
+        )}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input label="الاسم الأول" {...register('firstName')} error={errors.firstName?.message} />
+          <Input label="اسم العائلة" {...register('lastName')} error={errors.lastName?.message} />
+          <Input label="رقم الهوية" {...register('nationalId')} error={errors.nationalId?.message} />
+          <Input label="رقم الجوال" {...register('phone')} error={errors.phone?.message} />
+          <Input label="البريد الإلكتروني" type="email" className="sm:col-span-2" {...register('email')} error={errors.email?.message} />
+        </div>
+      </Modal>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_220px_220px_auto_auto]">
         <SearchField

@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Search, Users } from 'lucide-react';
 import { classesApi, teachersApi } from '@/lib/api';
+import { getCurrentHijriAcademicYear } from '@/lib/academic-year';
 import { Class, Student } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { fullName } from '@/lib/utils';
@@ -24,7 +25,7 @@ const createSchema = z.object({
   name: z.string().min(1, 'Required'),
   grade: z.string().min(1, 'Required'),
   section: z.string().optional(),
-  academicYear: z.string().regex(/^\d{4}-\d{4}$/, 'يجب أن يكون بصيغة 2025-2026'),
+  academicYear: z.string().regex(/^\d{4}-\d{4}$/, 'يجب أن يكون بصيغة 1446-1447'),
   teacherId: z.string().optional(),
   capacity: z.string().optional(),
 });
@@ -55,7 +56,7 @@ export default function ClassesPage() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
     defaultValues: {
-      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+      academicYear: getCurrentHijriAcademicYear(),
     },
   });
 
@@ -208,7 +209,7 @@ export default function ClassesPage() {
           <Input label="اسم الفصل" placeholder="مثال: فصل ألف" {...register('name')} error={errors.name?.message} />
           <Input label="الصف" placeholder="مثال: 1" {...register('grade')} error={errors.grade?.message} />
           <Input label="الشعبة (اختياري)" placeholder="مثال: أ" {...register('section')} />
-          <Input label="العام الدراسي" placeholder="مثال: 2025-2026" {...register('academicYear')} error={errors.academicYear?.message} />
+          <Input label="العام الدراسي" placeholder="مثال: 1446-1447" {...register('academicYear')} error={errors.academicYear?.message} />
           <Input label="الطاقة الاستيعابية (اختياري)" type="number" {...register('capacity')} />
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">معلم الفصل (اختياري)</label>
@@ -252,8 +253,8 @@ export default function ClassesPage() {
                       <p className="text-sm font-medium text-gray-900">{fullName(s.userId.name)}</p>
                       <p className="text-xs text-gray-500">{s.nationalId}</p>
                     </div>
-                    <Badge variant={s.gender === 'male' ? 'info' : 'purple'} className="ms-auto">
-                      {s.gender === 'male' ? 'ذكر' : 'أنثى'}
+                    <Badge variant={s.gender === 'male' ? 'info' : s.gender === 'female' ? 'purple' : 'default'} className="ms-auto">
+                      {s.gender === 'male' ? 'ذكر' : s.gender === 'female' ? 'أنثى' : 'غير محدد'}
                     </Badge>
                   </div>
                 ))}

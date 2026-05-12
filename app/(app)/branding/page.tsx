@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Palette, CheckCircle2, Building2, Mail, Phone, UsersRound } from 'lucide-react';
 import { schoolsApi } from '@/lib/api';
+import { getCurrentHijriAcademicYear } from '@/lib/academic-year';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
 import type { School, SchoolAdministrationContact, SchoolAdministrativeOfficeContact } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
@@ -46,7 +47,7 @@ const profileSchema = z.object({
   address: z.string().trim().min(5, 'الحد الأدنى 5 أحرف').max(200, 'الحد الأقصى 200 حرف'),
   phone: z.string().trim().min(7, 'الحد الأدنى 7 أرقام').max(20, 'الحد الأقصى 20 رقمًا'),
   email: optionalEmailField,
-  academicYear: z.string().trim().regex(/^\d{4}-\d{4}$/, 'استخدم الصيغة YYYY-YYYY'),
+  academicYear: z.string().trim().regex(/^\d{4}-\d{4}$/, 'استخدم الصيغة 1446-1447'),
   principalName: optionalNameField,
   principalPhone: optionalPhoneField,
   principalEmail: optionalEmailField,
@@ -65,7 +66,7 @@ const profileDefaultValues: ProfileFormValues = {
   address: '',
   phone: '',
   email: '',
-  academicYear: '',
+  academicYear: getCurrentHijriAcademicYear(),
   principalName: '',
   principalPhone: '',
   principalEmail: '',
@@ -97,7 +98,7 @@ const mapSchoolToProfileValues = (school: School): ProfileFormValues => ({
   address: school.address ?? '',
   phone: school.phone ?? '',
   email: school.email ?? '',
-  academicYear: school.academicYear ?? '',
+  academicYear: school.academicYear ?? getCurrentHijriAcademicYear(),
   principalName: school.administration?.principal?.name ?? '',
   principalPhone: school.administration?.principal?.phone ?? '',
   principalEmail: school.administration?.principal?.email ?? '',
@@ -477,7 +478,7 @@ export default function BrandingPage() {
             <Input label="العنوان" className="sm:col-span-2" error={profileErrors.address?.message} {...registerProfile('address')} />
             <Input label="الهاتف الرئيسي" error={profileErrors.phone?.message} {...registerProfile('phone')} />
             <Input label="البريد الرئيسي" type="email" error={profileErrors.email?.message} {...registerProfile('email')} />
-            <Input label="العام الدراسي" error={profileErrors.academicYear?.message} {...registerProfile('academicYear')} />
+            <Input label="العام الدراسي" placeholder="مثال: 1446-1447" error={profileErrors.academicYear?.message} {...registerProfile('academicYear')} />
 
             <Input label="اسم المدير" error={profileErrors.principalName?.message} {...registerProfile('principalName')} />
             <Input label="جوال المدير" error={profileErrors.principalPhone?.message} {...registerProfile('principalPhone')} />

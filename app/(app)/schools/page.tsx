@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Building2, Mail, PencilLine, Phone, Plus } from 'lucide-react';
 import { schoolsApi } from '@/lib/api';
+import { getCurrentHijriAcademicYear } from '@/lib/academic-year';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
 import type { School, SchoolAdministrationContact, SchoolAdministrativeOfficeContact } from '@/types';
@@ -41,7 +42,7 @@ const optionalEmailField = z.string().trim().refine(
   (value) => value === '' || emailSchema.safeParse(value).success,
   'Invalid email',
 );
-const academicYearField = z.string().trim().regex(/^\d{4}-\d{4}$/, 'Use YYYY-YYYY');
+const academicYearField = z.string().trim().regex(/^\d{4}-\d{4}$/, 'Use 1446-1447');
 
 const operationalSchema = {
   principalName: optionalNameField,
@@ -84,7 +85,7 @@ const editSchema = z.object({
 type CreateForm = z.infer<typeof createSchema>;
 type EditForm = z.infer<typeof editSchema>;
 
-const getDefaultAcademicYear = () => `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
+const getDefaultAcademicYear = () => getCurrentHijriAcademicYear();
 
 const emptyOperationalValues = {
   principalName: '',
@@ -552,7 +553,7 @@ export default function SchoolsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="اسم المدرسة" {...registerCreate('name')} error={createErrors.name?.message} />
               <Input label="الاسم الإضافي أو المختصر" {...registerCreate('nameAr')} error={createErrors.nameAr?.message} />
-              <Input label="العام الدراسي" {...registerCreate('academicYear')} error={createErrors.academicYear?.message} />
+              <Input label="العام الدراسي" placeholder="مثال: 1446-1447" {...registerCreate('academicYear')} error={createErrors.academicYear?.message} />
               <Input label="العنوان" {...registerCreate('address')} error={createErrors.address?.message} className="sm:col-span-2" />
               <Input label="الهاتف الرئيسي" {...registerCreate('phone')} error={createErrors.phone?.message} />
               <Input label="البريد الإلكتروني الرئيسي" type="email" {...registerCreate('email')} error={createErrors.email?.message} />
@@ -709,7 +710,7 @@ export default function SchoolsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label="اسم المدرسة" {...registerEdit('name')} error={editErrors.name?.message} />
               <Input label="الاسم الإضافي أو المختصر" {...registerEdit('nameAr')} error={editErrors.nameAr?.message} />
-              <Input label="العام الدراسي" {...registerEdit('academicYear')} error={editErrors.academicYear?.message} />
+              <Input label="العام الدراسي" placeholder="مثال: 1446-1447" {...registerEdit('academicYear')} error={editErrors.academicYear?.message} />
               <Input label="العنوان" {...registerEdit('address')} error={editErrors.address?.message} className="sm:col-span-2" />
               <Input label="الهاتف الرئيسي" {...registerEdit('phone')} error={editErrors.phone?.message} />
               <Input label="البريد الإلكتروني الرئيسي" type="email" {...registerEdit('email')} error={editErrors.email?.message} />

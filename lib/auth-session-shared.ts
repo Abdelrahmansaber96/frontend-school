@@ -3,7 +3,7 @@ import type { Role } from '@/types';
 export const FRONTEND_AUTH_COOKIE = 'basma-session';
 export const FRONTEND_ACCESS_TOKEN_COOKIE = 'basma-access-token';
 
-const ROLE_VALUES: Role[] = ['super_admin', 'school_admin', 'teacher', 'parent', 'student'];
+const ROLE_VALUES: Role[] = ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'];
 
 export const isRole = (value: string | null | undefined): value is Role => (
   Boolean(value) && ROLE_VALUES.includes(value as Role)

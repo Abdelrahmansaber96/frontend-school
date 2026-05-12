@@ -111,7 +111,9 @@ export default function StudentDetailsModal({ student, open, onClose, onStudentU
             </div>
             <div>
               <span className="text-ink-faint">الجنس: </span>
-              <span className="font-medium text-ink">{student.gender === 'male' ? 'ذكر' : 'أنثى'}</span>
+              <span className="font-medium text-ink">
+                {student.gender === 'male' ? 'ذكر' : student.gender === 'female' ? 'أنثى' : 'غير محدد'}
+              </span>
             </div>
             <div>
               <span className="text-ink-faint">الجوال: </span>

@@ -7,7 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export function fullName(name?: { first: string; last: string } | null): string {
   if (!name) return '—';
-  return `${name.first} ${name.last}`;
+
+  const first = name.first?.trim() || '';
+  const last = name.last?.trim() || '';
+
+  if (!first && !last) return '—';
+  if (!last || first === last) return first || last;
+
+  return `${first} ${last}`;
 }
 
 export function formatDate(dateStr?: string | null): string {

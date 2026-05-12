@@ -13,7 +13,7 @@ export const buildStudentPrintDocument = (students: Student[], classLabel: strin
         <td>${fullName(student.userId.name)}</td>
         <td>${student.nationalId}</td>
         <td>${student.classId?.name ?? '-'} - ${student.classId?.grade ?? ''}${student.classId?.section ? ` (${student.classId.section})` : ''}</td>
-        <td>${student.gender === 'male' ? 'ذكر' : 'أنثى'}</td>
+        <td>${student.gender === 'male' ? 'ذكر' : student.gender === 'female' ? 'أنثى' : 'غير محدد'}</td>
         <td>${student.userId.phone ?? '-'}</td>
         <td>${getParentName(student.parentId)}</td>
       </tr>`,

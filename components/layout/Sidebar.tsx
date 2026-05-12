@@ -23,7 +23,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'school_admin', 'teacher', 'parent'] },
-  { label: 'بوابة الطالب', href: '/portal', icon: GraduationCap, roles: ['student'] },
   { label: 'المدارس', href: '/schools', icon: School, roles: ['super_admin'] },
   { label: 'الحسابات', href: '/accounts', icon: UsersRound, roles: ['school_admin'] },
   { label: 'المعلمون', href: '/teachers', icon: BookOpen, roles: ['super_admin', 'school_admin'] },
@@ -33,14 +32,14 @@ const navItems: NavItem[] = [
   { label: 'أبنائي', href: '/children', icon: Baby, roles: ['parent'] },
   { label: 'الفصول الدراسية', href: '/classes', icon: BookOpen, roles: ['super_admin', 'school_admin', 'teacher'] },
   { label: 'الدرجات والاختبارات', href: '/grades', icon: NotebookPen, roles: ['school_admin', 'teacher'] },
-  { label: 'الحضور والغياب', href: '/attendance', icon: CheckSquare, roles: ['super_admin', 'school_admin', 'teacher', 'parent'] },
-  { label: 'السلوك', href: '/behavior', icon: Flag, roles: ['super_admin', 'school_admin', 'teacher', 'parent'] },
+  { label: 'الحضور والغياب', href: '/attendance', icon: CheckSquare, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
+  { label: 'السلوك', href: '/behavior', icon: Flag, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
   { label: 'الرسائل', href: '/messages', icon: MessageSquare, roles: ['school_admin', 'teacher', 'parent'] },
   { label: 'الملفات', href: '/uploads', icon: UploadCloud, roles: ['school_admin', 'teacher'] },
-  { label: 'الإشعارات', href: '/notifications', icon: Bell, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student'] },
+  { label: 'الإشعارات', href: '/notifications', icon: Bell, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
   { label: 'التقارير', href: '/reports', icon: BarChart3, roles: ['super_admin', 'school_admin', 'teacher'] },
   { label: 'العلامة التجارية', href: '/branding', icon: Palette, roles: ['super_admin', 'school_admin'] },
-  { label: 'الملف الشخصي', href: '/profile', icon: UserCircle, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student'] },
+  { label: 'الملف الشخصي', href: '/profile', icon: UserCircle, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
 ];
 
 interface SidebarProps {

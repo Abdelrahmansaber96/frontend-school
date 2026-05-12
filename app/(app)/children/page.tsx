@@ -138,8 +138,8 @@ export default function ChildrenPage() {
                   <Badge variant="info">
                     {selectedChild.classId?.name} — صف {selectedChild.classId?.grade}
                   </Badge>
-                  <Badge variant={selectedChild.gender === 'male' ? 'info' : 'purple'}>
-                    {selectedChild.gender === 'male' ? 'ذكر' : 'أنثى'}
+                  <Badge variant={selectedChild.gender === 'male' ? 'info' : selectedChild.gender === 'female' ? 'purple' : 'default'}>
+                    {selectedChild.gender === 'male' ? 'ذكر' : selectedChild.gender === 'female' ? 'أنثى' : 'غير محدد'}
                   </Badge>
                   <Badge variant={selectedChild.isActive ? 'success' : 'danger'}>
                     {selectedChild.isActive ? 'نشط' : 'غير نشط'}

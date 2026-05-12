@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Plus, Printer } from 'lucide-react';
+import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { FileUp, Plus, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { classesApi, parentsApi, reportsApi, studentsApi } from '@/lib/api';
 import { Student, GradeReportResponse } from '@/types';
@@ -53,6 +53,14 @@ const academicLevelBadgeStyles = {
   critical: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
 };
 
+type StudentImportResult = {
+  summary: {
+    totalRows: number;
+    importedCount: number;
+    errorCount: number;
+  };
+};
+
 export default function StudentsPage() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
@@ -64,8 +72,10 @@ export default function StudentsPage() {
   const [sortDir, setSortDir] = useState<StudentSortDirection>('none');
   const [selected, setSelected] = useState<Student | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const classesQuery = usePaginatedListQuery<StudentClassOption>({
     queryKey: ['classes-all'],
@@ -169,10 +179,10 @@ export default function StudentsPage() {
         classId: values.classId,
         parentId: values.parentId,
         dateOfBirth: values.dateOfBirth || undefined,
-      }).then(getEntityPayload<{ student: Student; tempPassword?: string | null }>),
+      }).then(getEntityPayload<{ student: Student }>),
     onMutate: () => setCreateError(null),
     onSuccess: (response) => {
-      setCreatedTempPassword(response.tempPassword ?? null);
+      void response;
       qc.invalidateQueries({ queryKey: ['students'] });
       createDialog.close();
     },
@@ -180,6 +190,32 @@ export default function StudentsPage() {
       setCreateError(getApiErrorMessage(error, 'فشل إنشاء الطالب.'));
     },
   });
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => studentsApi.import(file).then((response) => response.data.data as StudentImportResult),
+    onMutate: () => {
+      setImportError(null);
+      setImportSummary(null);
+    },
+    onSuccess: (response) => {
+      setImportSummary(response.summary);
+      void qc.invalidateQueries({ queryKey: ['students'] });
+    },
+    onError: (error) => {
+      setImportError(getApiErrorMessage(error, 'تعذر استيراد ملف الطلاب.'));
+    },
+  });
+
+  const handleImportFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    importMutation.mutate(file);
+  };
 
   const academicLevelByStudentId = useMemo(() => (
     (academicLevelsQuery.data?.studentBreakdown ?? []).reduce((acc, row) => {
@@ -241,8 +277,8 @@ export default function StudentsPage() {
       key: 'gender',
       header: 'الجنس',
       render: (s: Student) => (
-        <Badge variant={s.gender === 'male' ? 'info' : 'purple'}>
-          {s.gender === 'male' ? 'ذكر' : 'أنثى'}
+        <Badge variant={s.gender === 'male' ? 'info' : s.gender === 'female' ? 'purple' : 'default'}>
+          {s.gender === 'male' ? 'ذكر' : s.gender === 'female' ? 'أنثى' : 'غير محدد'}
         </Badge>
       ),
     },
@@ -284,6 +320,21 @@ export default function StudentsPage() {
         description="إدارة جميع طلاب المدرسة"
         action={
           <div className="flex items-center gap-2">
+            {canCreate && (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleImportFileChange}
+                />
+                <Button variant="secondary" onClick={() => importInputRef.current?.click()} loading={importMutation.isPending}>
+                  <FileUp className="h-4 w-4 me-1" />
+                  استيراد Excel
+                </Button>
+              </>
+            )}
             <Button variant="secondary" onClick={handlePrint} loading={isPrinting}>
               <Printer className="h-4 w-4 me-1" />
               طباعة الكشف
@@ -297,6 +348,19 @@ export default function StudentsPage() {
           </div>
         }
       />
+
+      {importSummary && (
+        <AlertBanner variant={importSummary.errorCount ? 'warning' : 'success'}>
+          تم استيراد {importSummary.importedCount} طالب من أصل {importSummary.totalRows} صف.
+          {importSummary.errorCount ? ` تعذر استيراد ${importSummary.errorCount} صف.` : ''}
+          {' '}
+          الأعمدة المدعومة: الاسم، رقم الهوية، رقم الجوال، الفصل، الصف.
+        </AlertBanner>
+      )}
+
+      {importError && (
+        <AlertBanner variant="error">{importError}</AlertBanner>
+      )}
 
       <StudentsFilters
         search={search}
@@ -322,14 +386,6 @@ export default function StudentsPage() {
             المستوى الحالي مبني على متوسط التقييمات المسجلة لكل مادة، وليس على الحضور والسلوك فقط.
           </p>
         </div>
-      )}
-
-      {createdTempPassword && (
-        <AlertBanner variant="warning">
-          تم إنشاء حساب الطالب. كلمة المرور المؤقتة:
-          {' '}
-          <span className="font-semibold" dir="ltr">{createdTempPassword}</span>
-        </AlertBanner>
       )}
 
       {academicLevelsQuery.error && (

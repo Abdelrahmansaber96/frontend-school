@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus } from 'lucide-react';
+import { FileUp, Plus } from 'lucide-react';
 import { teachersApi, subjectsApi, classesApi } from '@/lib/api';
 import { Teacher } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
@@ -40,6 +40,14 @@ const createSchema = z.object({
 });
 type CreateForm = z.infer<typeof createSchema>;
 
+type TeacherImportResult = {
+  summary: {
+    totalRows: number;
+    importedCount: number;
+    errorCount: number;
+  };
+};
+
 export default function TeachersPage() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
@@ -49,6 +57,9 @@ export default function TeachersPage() {
   const [selected, setSelected] = useState<Teacher | null>(null);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<TeacherImportResult['summary'] | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const teachersQuery = usePaginatedListQuery<Teacher>({
     queryKey: ['teachers', page, search],
@@ -95,6 +106,32 @@ export default function TeachersPage() {
       setCreateError(getApiErrorMessage(error, 'حدث خطأ أثناء إضافة المعلم'));
     },
   });
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => teachersApi.import(file).then((response) => response.data.data as TeacherImportResult),
+    onMutate: () => {
+      setImportError(null);
+      setImportSummary(null);
+    },
+    onSuccess: (response) => {
+      setImportSummary(response.summary);
+      void qc.invalidateQueries({ queryKey: ['teachers'] });
+    },
+    onError: (error) => {
+      setImportError(getApiErrorMessage(error, 'تعذر استيراد ملف المعلمين.'));
+    },
+  });
+
+  const handleImportFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    importMutation.mutate(file);
+  };
 
   const columns: Column<Teacher>[] = [
     {
@@ -164,12 +201,37 @@ export default function TeachersPage() {
         description="إدارة جميع معلمي المدرسة"
         action={
           canCreate ? (
-            <Button onClick={createDialog.open}>
-              <Plus className="h-4 w-4 me-1" /> إضافة معلم
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleImportFileChange}
+              />
+              <Button variant="secondary" onClick={() => importInputRef.current?.click()} loading={importMutation.isPending}>
+                <FileUp className="h-4 w-4 me-1" /> استيراد Excel
+              </Button>
+              <Button onClick={createDialog.open}>
+                <Plus className="h-4 w-4 me-1" /> إضافة معلم
+              </Button>
+            </div>
           ) : undefined
         }
       />
+
+      {importSummary && (
+        <AlertBanner variant={importSummary.errorCount ? 'warning' : 'success'}>
+          تم استيراد {importSummary.importedCount} معلم من أصل {importSummary.totalRows} صف.
+          {importSummary.errorCount ? ` تعذر استيراد ${importSummary.errorCount} صف.` : ''}
+          {' '}
+          كلمة المرور المؤقتة لكل معلم مستورد هي `Teacher@` متبوعة بآخر 4 أرقام من رقم الهوية.
+        </AlertBanner>
+      )}
+
+      {importError && (
+        <AlertBanner variant="error">{importError}</AlertBanner>
+      )}
 
       <SearchField
         containerClassName="max-w-sm"
