@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import AlertBanner from '@/components/ui/AlertBanner';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import StatusBadge from '@/components/ui/StatusBadge';
 import AccountActionPanel from '@/components/accounts/AccountActionPanel';
@@ -21,6 +22,8 @@ interface StudentDetailsModalProps {
   student: Student | null;
   open: boolean;
   onClose: () => void;
+  canEdit?: boolean;
+  onEditRequest?: () => void;
   onStudentUpdate?: (student: Student) => void;
 }
 
@@ -31,7 +34,14 @@ const academicLevelBadgeStyles = {
   critical: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
 };
 
-export default function StudentDetailsModal({ student, open, onClose, onStudentUpdate }: StudentDetailsModalProps) {
+export default function StudentDetailsModal({
+  student,
+  open,
+  onClose,
+  canEdit = false,
+  onEditRequest,
+  onStudentUpdate,
+}: StudentDetailsModalProps) {
   const gradeProfileQuery = useQuery<StudentGradeProfileResponse>({
     queryKey: ['student-grade-profile', student?._id],
     queryFn: () => gradesApi.getStudentProfile(student!._id).then(getEntityPayload<StudentGradeProfileResponse>),
@@ -54,6 +64,12 @@ export default function StudentDetailsModal({ student, open, onClose, onStudentU
               <StatusBadge isActive={student.userId.isActive} className="mt-1" />
             </div>
           </div>
+
+          {canEdit && onEditRequest && (
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={onEditRequest}>تعديل البيانات</Button>
+            </div>
+          )}
 
           {gradeProfileQuery.error && (
             <AlertBanner variant="warning">
@@ -125,12 +141,10 @@ export default function StudentDetailsModal({ student, open, onClose, onStudentU
                 <span className="font-medium text-ink">{formatDate(student.dateOfBirth)}</span>
               </div>
             )}
-            {student.parentId && (
-              <div className="col-span-2">
-                <span className="text-ink-faint">ولي الأمر: </span>
-                <span className="font-medium text-ink">{getParentName(student.parentId)}</span>
-              </div>
-            )}
+            <div className="col-span-2">
+              <span className="text-ink-faint">ولي الأمر: </span>
+              <span className="font-medium text-ink">{getParentName(student.parentId)}</span>
+            </div>
           </div>
 
           <AccountActionPanel

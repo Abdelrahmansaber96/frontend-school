@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,6 +40,9 @@ const createSchema = z.object({
 });
 type CreateForm = z.infer<typeof createSchema>;
 
+const updateSchema = createSchema.omit({ nationalId: true });
+type UpdateForm = z.infer<typeof updateSchema>;
+
 type TeacherImportResult = {
   summary: {
     totalRows: number;
@@ -59,8 +62,10 @@ export default function TeachersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Teacher | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<TeacherImportResult['summary'] | null>(null);
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
@@ -75,19 +80,44 @@ export default function TeachersPage() {
   const subjectsQuery = usePaginatedListQuery<{ _id: string; name: string }>({
     queryKey: ['subjects-select'],
     queryFn: () => subjectsApi.list({ page: 1, limit: 100 }),
-    enabled: createDialog.isOpen,
+    enabled: createDialog.isOpen || Boolean(editingTeacher),
   });
 
   const classesQuery = usePaginatedListQuery<{ _id: string; name: string; grade: string }>({
     queryKey: ['classes-select'],
     queryFn: () => classesApi.list({ page: 1, limit: 100 }),
-    enabled: createDialog.isOpen,
+    enabled: createDialog.isOpen || Boolean(editingTeacher),
   });
 
   const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
     defaultValues: { subjects: [], classes: [] },
   });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+    control: editControl,
+    formState: { errors: editErrors, isSubmitting: isEditSubmitting },
+  } = useForm<UpdateForm>({
+    resolver: zodResolver(updateSchema),
+    defaultValues: { subjects: [], classes: [] },
+  });
+
+  useEffect(() => {
+    if (editingTeacher) {
+      resetEdit({
+        firstName: editingTeacher.userId.name.first,
+        lastName: editingTeacher.userId.name.last,
+        phone: editingTeacher.userId.phone,
+        email: editingTeacher.userId.email || '',
+        specialization: editingTeacher.specialization || '',
+        subjects: editingTeacher.subjects?.map((subject) => subject._id) ?? [],
+        classes: editingTeacher.classes?.map((cls) => cls._id) ?? [],
+      });
+    }
+  }, [editingTeacher, resetEdit]);
 
   const createMutation = useMutation({
     mutationFn: (d: CreateForm) =>
@@ -109,6 +139,34 @@ export default function TeachersPage() {
     },
     onError: (error) => {
       setCreateError(getApiErrorMessage(error, 'حدث خطأ أثناء إضافة المعلم'));
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: UpdateForm) => {
+      if (!editingTeacher) {
+        throw new Error('No teacher selected for editing');
+      }
+
+      await teachersApi.update(editingTeacher._id, {
+        name: { first: values.firstName, last: values.lastName },
+        phone: values.phone,
+        email: values.email || undefined,
+        specialization: values.specialization || undefined,
+        subjects: values.subjects ?? [],
+        classes: values.classes ?? [],
+      });
+
+      return teachersApi.getById(editingTeacher._id).then(getEntityPayload<Teacher>);
+    },
+    onMutate: () => setEditError(null),
+    onSuccess: (updatedTeacher) => {
+      setEditingTeacher(null);
+      setSelected(updatedTeacher);
+      void qc.invalidateQueries({ queryKey: ['teachers'] });
+    },
+    onError: (error) => {
+      setEditError(getApiErrorMessage(error, 'تعذر تحديث بيانات المعلم.'));
     },
   });
 
@@ -389,6 +447,18 @@ export default function TeachersPage() {
         onClose={() => setSelected(null)}
         title="بيانات المعلم"
         size="md"
+        footer={canCreate ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!selected) return;
+              setEditingTeacher(selected);
+              setSelected(null);
+            }}
+          >
+            تعديل البيانات
+          </Button>
+        ) : undefined}
       >
         {selected && (
           <div className="space-y-4">
@@ -448,6 +518,111 @@ export default function TeachersPage() {
             />
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={!!editingTeacher}
+        onClose={() => {
+          if (editingTeacher) {
+            setSelected(editingTeacher);
+          }
+          setEditingTeacher(null);
+        }}
+        title="تعديل بيانات المعلم"
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (editingTeacher) {
+                  setSelected(editingTeacher);
+                }
+                setEditingTeacher(null);
+              }}
+            >
+              إلغاء
+            </Button>
+            <Button loading={isEditSubmitting} onClick={handleEditSubmit((values) => updateMutation.mutate(values))}>
+              حفظ التعديلات
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="الاسم الأول" {...registerEdit('firstName')} error={editErrors.firstName?.message} />
+          <Input label="اسم العائلة" {...registerEdit('lastName')} error={editErrors.lastName?.message} />
+          <Input label="رقم الجوال" {...registerEdit('phone')} error={editErrors.phone?.message} />
+          <Input
+            label="البريد الإلكتروني (اختياري)"
+            type="email"
+            {...registerEdit('email')}
+            error={editErrors.email?.message}
+          />
+          <Input
+            label="التخصص (اختياري)"
+            {...registerEdit('specialization')}
+          />
+          <Input label="رقم الهوية" value={editingTeacher?.nationalId ?? ''} disabled readOnly />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              المواد (اضغط Ctrl لتحديد أكثر من واحدة)
+            </label>
+            <Controller
+              name="subjects"
+              control={editControl}
+              render={({ field }) => (
+                <SelectField
+                  multiple
+                  className="h-24"
+                  value={field.value ?? []}
+                  onChange={(e) =>
+                    field.onChange(
+                      Array.from(e.target.selectedOptions, (o) => o.value)
+                    )
+                  }
+                >
+                  {(subjectsQuery.data?.items ?? []).map((s) => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              الفصول (اضغط Ctrl لتحديد أكثر من واحدة)
+            </label>
+            <Controller
+              name="classes"
+              control={editControl}
+              render={({ field }) => (
+                <SelectField
+                  multiple
+                  className="h-24"
+                  value={field.value ?? []}
+                  onChange={(e) =>
+                    field.onChange(
+                      Array.from(e.target.selectedOptions, (o) => o.value)
+                    )
+                  }
+                >
+                  {(classesQuery.data?.items ?? []).map((c) => (
+                    <option key={c._id} value={c._id}>{c.name} — Grade {c.grade}</option>
+                  ))}
+                </SelectField>
+              )}
+            />
+          </div>
+
+          {editError && (
+            <AlertBanner variant="error" className="sm:col-span-2">
+              {editError}
+            </AlertBanner>
+          )}
+        </div>
       </Modal>
     </div>
   );

@@ -18,6 +18,7 @@ import AlertBanner from '@/components/ui/AlertBanner';
 import StatusBadge from '@/components/ui/StatusBadge';
 import StudentsFilters, { type StudentSortDirection } from '@/components/students/StudentsFilters';
 import StudentCreateModal, { type StudentCreateFormValues } from '@/components/students/StudentCreateModal';
+import StudentEditModal, { type StudentEditFormValues } from '@/components/students/StudentEditModal';
 import StudentDetailsModal from '@/components/students/StudentDetailsModal';
 import { buildStudentPrintDocument } from '@/components/students/student-print';
 import {
@@ -75,8 +76,10 @@ export default function StudentsPage() {
   const [gradeFilter, setGradeFilter] = useState('');
   const [sortDir, setSortDir] = useState<StudentSortDirection>('none');
   const [selected, setSelected] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
@@ -90,7 +93,7 @@ export default function StudentsPage() {
   const parentsQuery = usePaginatedListQuery<ParentOption>({
     queryKey: ['parents-select'],
     queryFn: () => parentsApi.list({ page: 1, limit: 100 }),
-    enabled: createDialog.isOpen,
+    enabled: createDialog.isOpen || Boolean(editingStudent),
   });
 
   const grades = useMemo(() => {
@@ -182,7 +185,7 @@ export default function StudentsPage() {
         phone: values.phone,
         gender: values.gender,
         classId: values.classId,
-        parentId: values.parentId,
+        parentId: values.parentId || undefined,
         dateOfBirth: values.dateOfBirth || undefined,
       }).then(getEntityPayload<{ student: Student }>),
     onMutate: () => setCreateError(null),
@@ -193,6 +196,35 @@ export default function StudentsPage() {
     },
     onError: (error) => {
       setCreateError(getApiErrorMessage(error, 'فشل إنشاء الطالب.'));
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: StudentEditFormValues) => {
+      if (!editingStudent) {
+        throw new Error('No student selected for editing');
+      }
+
+      await studentsApi.update(editingStudent._id, {
+        name: { first: values.firstName, last: values.lastName },
+        phone: values.phone,
+        gender: values.gender,
+        classId: values.classId,
+        parentId: values.parentId || null,
+        dateOfBirth: values.dateOfBirth || null,
+      });
+
+      return studentsApi.getById(editingStudent._id).then(getEntityPayload<Student>);
+    },
+    onMutate: () => setEditError(null),
+    onSuccess: (updatedStudent) => {
+      setEditingStudent(null);
+      setSelected(updatedStudent);
+      void qc.invalidateQueries({ queryKey: ['students'] });
+      void qc.invalidateQueries({ queryKey: ['parents'] });
+    },
+    onError: (error) => {
+      setEditError(getApiErrorMessage(error, 'فشل تحديث بيانات الطالب.'));
     },
   });
 
@@ -447,7 +479,29 @@ export default function StudentsPage() {
         student={selected}
         open={!!selected}
         onClose={() => setSelected(null)}
+        canEdit={canCreate}
+        onEditRequest={() => {
+          if (!selected) return;
+          setEditingStudent(selected);
+          setSelected(null);
+        }}
         onStudentUpdate={(updatedStudent) => setSelected(updatedStudent)}
+      />
+
+      <StudentEditModal
+        student={editingStudent}
+        open={!!editingStudent}
+        onClose={() => {
+          if (editingStudent) {
+            setSelected(editingStudent);
+          }
+          setEditingStudent(null);
+        }}
+        onSubmit={(values) => updateMutation.mutate(values)}
+        isSubmitting={updateMutation.isPending}
+        classes={classesQuery.data?.items ?? []}
+        parents={parentsQuery.data?.items ?? []}
+        errorMessage={editError}
       />
     </div>
   );

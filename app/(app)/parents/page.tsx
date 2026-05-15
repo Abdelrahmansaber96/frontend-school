@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,6 +36,17 @@ const createSchema = z.object({
 });
 type CreateFormData = z.infer<typeof createSchema>;
 
+const updateSchema = z.object({
+  firstName: z.string().min(1, 'Required'),
+  lastName: z.string().min(1, 'Required'),
+  phone: z.string().min(9, 'Min 9 digits'),
+  email: z.string().email().optional().or(z.literal('')),
+  occupation: z.string().optional(),
+  address: z.string().optional(),
+});
+
+type UpdateFormData = z.infer<typeof updateSchema>;
+
 const PAGE_SIZE = 10;
 
 export default function ParentsPage() {
@@ -46,8 +57,10 @@ export default function ParentsPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selected, setSelected] = useState<Parent | null>(null);
+  const [editingParent, setEditingParent] = useState<Parent | null>(null);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const parentsQuery = usePaginatedListQuery<Parent>({
     queryKey: ['parents', page, search],
@@ -57,6 +70,28 @@ export default function ParentsPage() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
   });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+    formState: { errors: editErrors, isSubmitting: isEditSubmitting },
+  } = useForm<UpdateFormData>({
+    resolver: zodResolver(updateSchema),
+  });
+
+  useEffect(() => {
+    if (editingParent) {
+      resetEdit({
+        firstName: editingParent.userId.name.first,
+        lastName: editingParent.userId.name.last,
+        phone: editingParent.userId.phone,
+        email: editingParent.userId.email || '',
+        occupation: editingParent.occupation || '',
+        address: editingParent.address || '',
+      });
+    }
+  }, [editingParent, resetEdit]);
 
   const createMutation = useMutation({
     mutationFn: (d: CreateFormData) =>
@@ -75,6 +110,33 @@ export default function ParentsPage() {
     },
     onError: (error) => {
       setCreateError(getApiErrorMessage(error, 'فشل إنشاء ولي الأمر.'));
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: UpdateFormData) => {
+      if (!editingParent) {
+        throw new Error('No parent selected for editing');
+      }
+
+      await parentsApi.update(editingParent._id, {
+        name: { first: values.firstName, last: values.lastName },
+        phone: values.phone,
+        email: values.email || undefined,
+        occupation: values.occupation || undefined,
+        address: values.address || undefined,
+      });
+
+      return parentsApi.getById(editingParent._id).then(getEntityPayload<Parent>);
+    },
+    onMutate: () => setEditError(null),
+    onSuccess: (updatedParent) => {
+      setEditingParent(null);
+      setSelected(updatedParent);
+      void qc.invalidateQueries({ queryKey: ['parents'] });
+    },
+    onError: (error) => {
+      setEditError(getApiErrorMessage(error, 'فشل تحديث بيانات ولي الأمر.'));
     },
   });
 
@@ -213,7 +275,23 @@ export default function ParentsPage() {
 
       {/* Detail modal */}
       {selected && (
-        <Modal open={!!selected} onClose={() => setSelected(null)} title="بيانات ولي الأمر">
+        <Modal
+          open={!!selected}
+          onClose={() => setSelected(null)}
+          title="بيانات ولي الأمر"
+          footer={canCreate ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!selected) return;
+                setEditingParent(selected);
+                setSelected(null);
+              }}
+            >
+              تعديل البيانات
+            </Button>
+          ) : undefined}
+        >
           <div className="space-y-5">
             <div className="flex items-center gap-4">
               <Avatar name={selected.userId.name} size="xl" />
@@ -288,6 +366,52 @@ export default function ParentsPage() {
           </div>
         </Modal>
       )}
+
+      <Modal
+        open={!!editingParent}
+        onClose={() => {
+          if (editingParent) {
+            setSelected(editingParent);
+          }
+          setEditingParent(null);
+        }}
+        title="تعديل بيانات ولي الأمر"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (editingParent) {
+                  setSelected(editingParent);
+                }
+                setEditingParent(null);
+              }}
+            >
+              إلغاء
+            </Button>
+            <Button loading={isEditSubmitting} onClick={handleEditSubmit((values) => updateMutation.mutate(values))}>
+              حفظ التعديلات
+            </Button>
+          </div>
+        }
+      >
+        <form className="space-y-4" onSubmit={handleEditSubmit((values) => updateMutation.mutate(values))}>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="الاسم الأول" {...registerEdit('firstName')} error={editErrors.firstName?.message} />
+            <Input label="اسم العائلة" {...registerEdit('lastName')} error={editErrors.lastName?.message} />
+            <Input label="رقم الجوال" {...registerEdit('phone')} error={editErrors.phone?.message} />
+            <Input label="رقم الهوية" value={editingParent?.nationalId ?? ''} disabled readOnly />
+          </div>
+          <Input label="البريد الإلكتروني (اختياري)" type="email" {...registerEdit('email')} error={editErrors.email?.message} />
+          <Input label="المهنة (اختياري)" {...registerEdit('occupation')} error={editErrors.occupation?.message} />
+          <Input label="العنوان (اختياري)" {...registerEdit('address')} error={editErrors.address?.message} />
+          {editError && (
+            <AlertBanner variant="error">
+              {editError}
+            </AlertBanner>
+          )}
+        </form>
+      </Modal>
     </div>
   );
 }

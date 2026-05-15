@@ -10,11 +10,11 @@ import Button from '@/components/ui/Button';
 import SelectField from '@/components/ui/SelectField';
 import AlertBanner from '@/components/ui/AlertBanner';
 import { fullName } from '@/lib/utils';
+import type { Student } from '@/types';
 
-export const studentCreateSchema = z.object({
+const studentEditSchema = z.object({
   firstName: z.string().min(1, 'Required'),
   lastName: z.string().min(1, 'Required'),
-  nationalId: z.string().min(5, 'Min 5 chars'),
   phone: z.string().min(9, 'Min 9 digits'),
   gender: z.enum(['male', 'female', 'unspecified']),
   classId: z.string().min(1, 'Required'),
@@ -22,7 +22,7 @@ export const studentCreateSchema = z.object({
   dateOfBirth: z.string().optional(),
 });
 
-export type StudentCreateFormValues = z.infer<typeof studentCreateSchema>;
+export type StudentEditFormValues = z.infer<typeof studentEditSchema>;
 
 interface StudentClassOption {
   _id: string;
@@ -37,63 +37,72 @@ interface StudentParentOption {
   nationalId: string;
 }
 
-interface StudentCreateModalProps {
+interface StudentEditModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: StudentCreateFormValues) => void;
+  onSubmit: (values: StudentEditFormValues) => void;
   isSubmitting: boolean;
+  student: Student | null;
   classes: StudentClassOption[];
   parents: StudentParentOption[];
   errorMessage?: string | null;
 }
 
-export default function StudentCreateModal({
+export default function StudentEditModal({
   open,
   onClose,
   onSubmit,
   isSubmitting,
+  student,
   classes,
   parents,
   errorMessage,
-}: StudentCreateModalProps) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<StudentCreateFormValues>({
-    resolver: zodResolver(studentCreateSchema),
-    defaultValues: { gender: 'unspecified', parentId: '' },
+}: StudentEditModalProps) {
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<StudentEditFormValues>({
+    resolver: zodResolver(studentEditSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      gender: 'unspecified',
+      classId: '',
+      parentId: '',
+      dateOfBirth: '',
+    },
   });
 
   useEffect(() => {
-    if (!open) {
+    if (open && student) {
       reset({
-        firstName: '',
-        lastName: '',
-        nationalId: '',
-        phone: '',
-        gender: 'unspecified',
-        classId: '',
-        parentId: '',
-        dateOfBirth: '',
+        firstName: student.userId.name.first,
+        lastName: student.userId.name.last,
+        phone: student.userId.phone,
+        gender: student.gender || 'unspecified',
+        classId: student.classId?._id || '',
+        parentId: student.parentId?._id || '',
+        dateOfBirth: student.dateOfBirth ? String(student.dateOfBirth).slice(0, 10) : '',
       });
     }
-  }, [open, reset]);
+  }, [open, reset, student]);
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="إضافة طالب جديد"
+      title="تعديل بيانات الطالب"
       size="lg"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>إلغاء</Button>
-          <Button loading={isSubmitting} onClick={handleSubmit(onSubmit)}>إضافة طالب</Button>
+          <Button loading={isSubmitting} onClick={handleSubmit(onSubmit)}>حفظ التعديلات</Button>
         </div>
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="الاسم الأول" {...register('firstName')} error={errors.firstName?.message} />
         <Input label="اسم العائلة" {...register('lastName')} error={errors.lastName?.message} />
-        <Input label="رقم الهوية" {...register('nationalId')} error={errors.nationalId?.message} />
         <Input label="رقم الجوال" {...register('phone')} error={errors.phone?.message} />
+        <Input label="رقم الهوية" value={student?.nationalId ?? ''} disabled readOnly />
         <SelectField label="الجنس" {...register('gender')} error={errors.gender?.message}>
           <option value="unspecified">غير محدد</option>
           <option value="male">ذكر</option>
