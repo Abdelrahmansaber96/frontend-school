@@ -237,7 +237,7 @@ export default function BehaviorPage() {
       key: 'teacher',
       header: 'سجله',
       render: (r: BehaviorRecord) => (
-        <span className="text-sm text-gray-700">{fullName(r.teacherId?.userId?.name)}</span>
+        <span className="text-sm text-gray-700">{r.teacherId ? fullName(r.teacherId.userId.name) : 'الإدارة'}</span>
       ),
     },
     {

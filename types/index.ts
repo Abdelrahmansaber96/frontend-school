@@ -314,7 +314,7 @@ export type BehaviorType = 'positive' | 'negative';
 export interface BehaviorRecord {
   _id: string;
   studentId: { _id: string; userId: { name: { first: string; last: string } }; nationalId: string };
-  teacherId: { _id: string; userId: { name: { first: string; last: string } } };
+  teacherId: { _id: string; userId: { name: { first: string; last: string } } } | null;
   classId: { _id: string; name: string; grade: string };
   type: BehaviorType;
   category?: string;
