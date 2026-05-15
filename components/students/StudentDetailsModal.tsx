@@ -119,11 +119,11 @@ export default function StudentDetailsModal({
           <div className="grid grid-cols-2 gap-3 rounded-lg bg-glaze/[0.03] p-4 text-sm">
             <div>
               <span className="text-ink-faint">الفصل: </span>
-              <span className="font-medium text-ink">{student.classId?.name}</span>
+              <span className="font-medium text-ink">{student.classId?.name ?? '—'}</span>
             </div>
             <div>
               <span className="text-ink-faint">الصف: </span>
-              <span className="font-medium text-ink">{student.classId?.grade}</span>
+              <span className="font-medium text-ink">{student.classId?.grade ?? '—'}</span>
             </div>
             <div>
               <span className="text-ink-faint">الجنس: </span>

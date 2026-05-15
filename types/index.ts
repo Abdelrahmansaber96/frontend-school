@@ -160,7 +160,7 @@ export interface Student {
   };
   schoolId: string;
   nationalId: string;
-  classId: { _id: string; name: string; grade: string; section?: string };
+  classId: { _id: string; name: string; grade: string; section?: string } | null;
   parentId: { _id: string; userId: { name: { first: string; last: string }; phone: string } } | null;
   gender: 'male' | 'female' | 'unspecified';
   dateOfBirth?: string;

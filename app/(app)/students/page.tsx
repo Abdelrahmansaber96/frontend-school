@@ -394,6 +394,8 @@ export default function StudentsPage() {
           {importSummary.errorCount ? ` تعذر استيراد ${importSummary.errorCount} صف.` : ''}
           {' '}
           الأعمدة المدعومة: الاسم، رقم الهوية، رقم الجوال، الفصل، الصف.
+          {' '}
+          الفصل والصف اختياريان، وإذا كانت قيمهما جديدة فسيتم إنشاء الفصل تلقائيًا متى كانت البيانات كافية.
         </AlertBanner>
       )}
 
