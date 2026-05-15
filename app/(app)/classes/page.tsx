@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Search, Users } from 'lucide-react';
+import { FileUp, Plus, Search, Users } from 'lucide-react';
 import { classesApi, teachersApi } from '@/lib/api';
 import { getCurrentHijriAcademicYear } from '@/lib/academic-year';
 import { Class, Student } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { fullName } from '@/lib/utils';
+import { getApiErrorMessage } from '@/lib/api-contracts';
 import PageHeader from '@/components/ui/PageHeader';
+import AlertBanner from '@/components/ui/AlertBanner';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Table from '@/components/ui/Table';
@@ -31,6 +33,20 @@ const createSchema = z.object({
 });
 type CreateForm = z.infer<typeof createSchema>;
 
+type ClassImportRowError = {
+  row: number;
+  message: string;
+};
+
+type ClassImportResult = {
+  summary: {
+    totalRows: number;
+    importedCount: number;
+    errorCount: number;
+  };
+  errors?: ClassImportRowError[];
+};
+
 export default function ClassesPage() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
@@ -40,6 +56,10 @@ export default function ClassesPage() {
   const [selected, setSelected] = useState<Class | null>(null);
   const [classStudents, setClassStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<ClassImportResult['summary'] | null>(null);
+  const [importRowErrors, setImportRowErrors] = useState<ClassImportRowError[]>([]);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['classes', page, search],
@@ -76,6 +96,34 @@ export default function ClassesPage() {
       reset();
     },
   });
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => classesApi.import(file).then((response) => response.data.data as ClassImportResult),
+    onMutate: () => {
+      setImportError(null);
+      setImportSummary(null);
+      setImportRowErrors([]);
+    },
+    onSuccess: (response) => {
+      setImportSummary(response.summary);
+      setImportRowErrors(response.errors?.slice(0, 5) ?? []);
+      void qc.invalidateQueries({ queryKey: ['classes'] });
+    },
+    onError: (error) => {
+      setImportError(getApiErrorMessage(error, 'تعذر استيراد ملف الصفوف.'));
+    },
+  });
+
+  const handleImportFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    importMutation.mutate(file);
+  };
 
   const handleRowClick = async (cls: Class) => {
     setSelected(cls);
@@ -156,12 +204,53 @@ export default function ClassesPage() {
         description="إدارة جميع الفصول وتوزيعاتها"
         action={
           canCreate ? (
-            <Button onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4 me-1" /> إضافة فصل
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleImportFileChange}
+              />
+              <Button variant="secondary" onClick={() => importInputRef.current?.click()} loading={importMutation.isPending}>
+                <FileUp className="h-4 w-4 me-1" /> استيراد Excel
+              </Button>
+              <Button onClick={() => setShowCreate(true)}>
+                <Plus className="h-4 w-4 me-1" /> إضافة فصل
+              </Button>
+            </div>
           ) : undefined
         }
       />
+
+      {importSummary && (
+        <AlertBanner variant={importSummary.errorCount ? 'warning' : 'success'}>
+          تم استيراد {importSummary.importedCount} فصل من أصل {importSummary.totalRows} صف.
+          {importSummary.errorCount ? ` تعذر استيراد ${importSummary.errorCount} صف.` : ''}
+          {' '}
+          الأعمدة المدعومة: اسم الفصل، الصف، الشعبة، العام الدراسي، السعة.
+        </AlertBanner>
+      )}
+
+      {importRowErrors.length > 0 && (
+        <AlertBanner variant="error">
+          <div className="space-y-2">
+            <p className="font-medium">أول أخطاء الاستيراد:</p>
+            <div className="space-y-1">
+              {importRowErrors.map((item) => (
+                <p key={`${item.row}-${item.message}`}>الصف {item.row}: {item.message}</p>
+              ))}
+            </div>
+            {importSummary && importSummary.errorCount > importRowErrors.length ? (
+              <p className="text-xs opacity-80">تم عرض أول {importRowErrors.length} أخطاء فقط.</p>
+            ) : null}
+          </div>
+        </AlertBanner>
+      )}
+
+      {importError && (
+        <AlertBanner variant="error">{importError}</AlertBanner>
+      )}
 
       <div className="relative max-w-sm">
         <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

@@ -234,6 +234,13 @@ export const classesApi = {
   list: (params?: object) => api.get('/classes', { params }),
   getById: (id: string) => api.get(`/classes/${id}`),
   create: (data: object) => api.post('/classes', data),
+  import: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/classes/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   update: (id: string, data: object) => api.patch(`/classes/${id}`, data),
   delete: (id: string) => api.delete(`/classes/${id}`),
   getStudents: (id: string, params?: object) => api.get(`/classes/${id}/students`, { params }),
