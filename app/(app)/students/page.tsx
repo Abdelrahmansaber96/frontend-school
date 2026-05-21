@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useMemo, useRef, useState } from 'react';
-import { FileUp, Plus, Printer } from 'lucide-react';
+import { Download, FileUp, Plus, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { classesApi, parentsApi, reportsApi, studentsApi } from '@/lib/api';
 import { Student, GradeReportResponse } from '@/types';
@@ -27,6 +27,7 @@ import {
   getGradeReportPayload,
   getListPayload,
 } from '@/lib/api-contracts';
+import { downloadBlobResponse } from '@/lib/download';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
 import { useDisclosure } from '@/hooks/useDisclosure';
 
@@ -78,9 +79,11 @@ export default function StudentsPage() {
   const [selected, setSelected] = useState<Student | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -143,14 +146,18 @@ export default function StudentsPage() {
     setSortDir((prev) => (prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none'));
   };
 
+  const buildScopedStudentParams = () => ({
+    search,
+    ...(classFilter ? { classId: classFilter } : gradeFilter ? { grade: gradeFilter } : {}),
+  });
+
   const handlePrint = async () => {
     setIsPrinting(true);
     try {
       const printParams = {
         page: 1,
         limit: 500,
-        search,
-        ...(classFilter ? { classId: classFilter } : gradeFilter ? { grade: gradeFilter } : {}),
+        ...buildScopedStudentParams(),
       };
       const res = await studentsApi.list(printParams).then(getListPayload<Student>);
       const students = res.items;
@@ -174,6 +181,30 @@ export default function StudentsPage() {
       }
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const response = await studentsApi.export({
+        ...buildScopedStudentParams(),
+        format: 'xlsx',
+      });
+
+      const fallbackLabel = classFilter
+        ? visibleClasses.find((item) => item._id === classFilter)?.name ?? 'class'
+        : gradeFilter
+          ? `grade-${gradeFilter}`
+          : 'all';
+
+      downloadBlobResponse(response, `student-roster-${fallbackLabel}.xlsx`);
+    } catch (error) {
+      setExportError(getApiErrorMessage(error, 'تعذر تصدير كشف الطلاب.'));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -378,6 +409,10 @@ export default function StudentsPage() {
               <Printer className="h-4 w-4 me-1" />
               طباعة الكشف
             </Button>
+            <Button variant="secondary" onClick={handleExport} loading={isExporting}>
+              <Download className="h-4 w-4 me-1" />
+              تنزيل Excel
+            </Button>
             {canCreate && (
               <Button onClick={createDialog.open}>
                 <Plus className="h-4 w-4 me-1" />
@@ -417,6 +452,10 @@ export default function StudentsPage() {
 
       {importError && (
         <AlertBanner variant="error">{importError}</AlertBanner>
+      )}
+
+      {exportError && (
+        <AlertBanner variant="error">{exportError}</AlertBanner>
       )}
 
       <StudentsFilters

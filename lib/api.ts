@@ -216,6 +216,10 @@ export const parentsApi = {
 
 export const studentsApi = {
   list: (params?: object) => api.get('/students', { params }),
+  export: (params?: object) => api.get('/students/export', {
+    params,
+    responseType: 'blob',
+  }),
   getMe: () => api.get('/students/me'),
   getById: (id: string) => api.get(`/students/${id}`),
   create: (data: object) => api.post('/students', data),
