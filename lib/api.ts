@@ -183,6 +183,7 @@ export const schoolsApi = {
   create: (data: object) => api.post('/schools', data),
   update: (id: string, data: object) => api.patch(`/schools/${id}`, data),
   updateCurrentProfile: (data: object) => api.patch('/schools/profile', data),
+  purgeCurrentData: (data: object) => api.post('/schools/purge', data),
   updateSettings: (id: string, data: object) => api.patch(`/schools/${id}/settings`, data),
   delete: (id: string) => api.delete(`/schools/${id}`),
   getCurrent: () => api.get('/schools/current', { skipAuthRedirect: true } as AuthAwareRequestConfig),
