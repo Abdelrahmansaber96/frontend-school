@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, GraduationCap, BookOpen, CheckSquare, Flag,
-  MessageSquare, Bell, BarChart3, School, X, ChevronRight, Baby, UserCircle, UsersRound, Palette, UploadCloud, NotebookPen,
+  MessageSquare, Bell, BarChart3, School, X, ChevronRight, Baby, UserCircle, UsersRound, UploadCloud, NotebookPen,
 } from 'lucide-react';
 import { cn, fullName } from '@/lib/utils';
 import { hasAnyRole } from '@/lib/role-access';
@@ -38,7 +38,6 @@ const navItems: NavItem[] = [
   { label: 'الملفات', href: '/uploads', icon: UploadCloud, roles: ['school_admin', 'teacher'] },
   { label: 'الإشعارات', href: '/notifications', icon: Bell, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
   { label: 'التقارير', href: '/reports', icon: BarChart3, roles: ['super_admin', 'school_admin', 'teacher'] },
-  { label: 'العلامة التجارية', href: '/branding', icon: Palette, roles: ['super_admin', 'school_admin'] },
   { label: 'الملف الشخصي', href: '/profile', icon: UserCircle, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
 ];
 

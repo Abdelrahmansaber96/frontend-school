@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { usersApi } from '@/lib/api';
+import { Trash2, TriangleAlert } from 'lucide-react';
+import { schoolsApi, usersApi } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api-contracts';
 import { useAuthStore } from '@/store/auth.store';
 import { fullName } from '@/lib/utils';
 import PageHeader from '@/components/ui/PageHeader';
@@ -13,6 +15,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
+import AlertBanner from '@/components/ui/AlertBanner';
 import { PageSpinner } from '@/components/ui/Spinner';
 
 const schema = z.object({
@@ -23,10 +26,38 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
+const PURGE_CONFIRMATION_TEXT = 'حذف جميع البيانات';
+const arabicIntegerFormatter = new Intl.NumberFormat('ar-EG');
+
+type PurgeSchoolDataResponse = {
+  counts: {
+    uploads: number;
+    auditLogs: number;
+    notifications: number;
+    messages: number;
+    conversations: number;
+    attendance: number;
+    behavior: number;
+    grades: number;
+    students: number;
+    parents: number;
+    teachers: number;
+    subjects: number;
+    classes: number;
+    users: number;
+  };
+  totalDeleted: number;
+};
+
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
+  const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [purgeConfirmationText, setPurgeConfirmationText] = useState('');
+  const [purgeSuccess, setPurgeSuccess] = useState<PurgeSchoolDataResponse | null>(null);
+  const [purgeError, setPurgeError] = useState<string | null>(null);
+  const canPurgeSchoolData = user?.role === 'school_admin';
 
   const { data: meData, isLoading } = useQuery({
     queryKey: ['me'],
@@ -61,6 +92,41 @@ export default function ProfilePage() {
     },
   });
 
+  const purgeSchoolDataMutation = useMutation({
+    mutationFn: () => schoolsApi.purgeCurrentData({
+      confirmationText: purgeConfirmationText.trim(),
+    }).then((response) => response.data.data as PurgeSchoolDataResponse),
+    onMutate: () => {
+      setPurgeError(null);
+      setPurgeSuccess(null);
+    },
+    onSuccess: async (summary) => {
+      setPurgeSuccess(summary);
+      setPurgeConfirmationText('');
+      await queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      setPurgeError(getApiErrorMessage(error, 'تعذر حذف بيانات المدرسة الحالية.'));
+    },
+  });
+
+  const purgeSummaryText = purgeSuccess
+    ? `تم حذف ${arabicIntegerFormatter.format(purgeSuccess.totalDeleted)} عنصرًا، منها ${arabicIntegerFormatter.format(purgeSuccess.counts.students)} طالب، ${arabicIntegerFormatter.format(purgeSuccess.counts.teachers)} معلم، ${arabicIntegerFormatter.format(purgeSuccess.counts.parents)} ولي أمر، ${arabicIntegerFormatter.format(purgeSuccess.counts.classes)} فصل، و${arabicIntegerFormatter.format(purgeSuccess.counts.subjects)} مادة. تم الإبقاء على حسابات مديري المدرسة وبيانات المدرسة الأساسية.`
+    : null;
+
+  const handlePurgeSchoolData = () => {
+    if (purgeConfirmationText.trim() !== PURGE_CONFIRMATION_TEXT) {
+      return;
+    }
+
+    const confirmed = window.confirm('سيتم حذف جميع بيانات المدرسة التشغيلية نهائيًا مع الإبقاء على حساب مدير المدرسة وبيانات المدرسة الأساسية. هل تريد المتابعة؟');
+    if (!confirmed) {
+      return;
+    }
+
+    purgeSchoolDataMutation.mutate();
+  };
+
   if (isLoading) return <PageSpinner />;
 
   return (
@@ -74,6 +140,14 @@ export default function ProfilePage() {
           ) : undefined
         }
       />
+
+      {purgeSummaryText && (
+        <AlertBanner variant="success">{purgeSummaryText}</AlertBanner>
+      )}
+
+      {purgeError && (
+        <AlertBanner variant="error">{purgeError}</AlertBanner>
+      )}
 
       {/* Profile card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -125,6 +199,41 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {canPurgeSchoolData && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 space-y-5">
+          <div className="flex items-center gap-2 border-b border-red-200 pb-3">
+            <TriangleAlert className="h-4 w-4 text-red-600" />
+            <h3 className="text-sm font-semibold text-red-700">منطقة خطرة</h3>
+          </div>
+
+          <div className="space-y-2 text-sm text-red-700">
+            <p>هذا الإجراء يحذف جميع بيانات المدرسة التشغيلية نهائيًا: الطلاب، المعلمين، أولياء الأمور، الفصول، المواد، الدرجات، الحضور، السلوك، الرسائل، الإشعارات، الملفات، والسجلات المرتبطة بالمدرسة.</p>
+            <p>سيتم الإبقاء على حسابات مدير المدرسة وسجل المدرسة الأساسي فقط حتى تتمكن من الدخول والبدء من جديد.</p>
+          </div>
+
+          <Input
+            label={`للتأكيد اكتب العبارة التالية حرفيًا: ${PURGE_CONFIRMATION_TEXT}`}
+            value={purgeConfirmationText}
+            onChange={(event) => setPurgeConfirmationText(event.target.value)}
+            placeholder={PURGE_CONFIRMATION_TEXT}
+            hint="لن يتم تفعيل زر الحذف حتى تتطابق العبارة بالكامل."
+          />
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="danger"
+              loading={purgeSchoolDataMutation.isPending}
+              disabled={purgeConfirmationText.trim() !== PURGE_CONFIRMATION_TEXT}
+              onClick={handlePurgeSchoolData}
+            >
+              <Trash2 className="h-4 w-4" />
+              حذف جميع البيانات
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

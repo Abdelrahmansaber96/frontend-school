@@ -8,9 +8,7 @@ import {
   CalendarCheck,
   AlertCircle,
   School,
-  Palette,
 } from 'lucide-react';
-import Link from 'next/link';
 import { dashboardApi, attendanceApi, behaviorApi } from '@/lib/api';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
 import { useAuthStore } from '@/store/auth.store';
@@ -121,28 +119,17 @@ export default function DashboardPage() {
       {/* School info card for school admins */}
       {isLoaded && schoolName && canViewAdministrativeStats && (
         <div className="glass-shine rounded-2xl border border-stroke bg-glaze/[0.02] p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <SchoolLogo
-                alt={schoolName}
-                src={schoolLogoSrc}
-                branding={branding}
-                size="md"
-                className="border border-stroke"
-              />
-              <div>
-                <h3 className="text-[15px] font-semibold text-ink">{schoolNameAr || schoolName}</h3>
-              </div>
+          <div className="flex items-center gap-4">
+            <SchoolLogo
+              alt={schoolName}
+              src={schoolLogoSrc}
+              branding={branding}
+              size="md"
+              className="border border-stroke"
+            />
+            <div>
+              <h3 className="text-[15px] font-semibold text-ink">{schoolNameAr || schoolName}</h3>
             </div>
-            {user?.role === 'school_admin' && (
-              <Link
-                href="/branding"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-glaze/[0.06] px-3 py-1.5 text-[12px] font-medium text-ink-dim hover:bg-glaze/[0.10] hover:text-ink transition-all duration-200"
-              >
-                <Palette className="h-3.5 w-3.5" />
-                تخصيص العلامة التجارية
-              </Link>
-            )}
           </div>
         </div>
       )}
