@@ -458,7 +458,7 @@ export default function BehaviorPage() {
               <input
                 type="file"
                 multiple
-                accept="image/png,image/jpeg,image/webp,application/pdf"
+                accept="image/png,image/jpeg,image/webp,application/pdf,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 onChange={handleAttachmentUpload}
                 className="hidden"
               />
