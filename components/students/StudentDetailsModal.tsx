@@ -145,6 +145,12 @@ export default function StudentDetailsModal({
               <span className="text-ink-faint">ولي الأمر: </span>
               <span className="font-medium text-ink">{getParentName(student.parentId)}</span>
             </div>
+            {student.emergencyContacts?.map((contact, index) => (
+              <div key={`${contact.phone}-${index}`} className="col-span-2">
+                <span className="text-ink-faint">جهة اتصال إضافية ({contact.relationship}): </span>
+                <span className="font-medium text-ink">{contact.phone}</span>
+              </div>
+            ))}
           </div>
 
           <AccountActionPanel

@@ -423,6 +423,20 @@ export default function StudentsPage() {
         }
       />
 
+      {canCreate && (
+        <div className="glass-shine rounded-2xl border border-stroke bg-glaze/[0.02] p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div>
+            <p className="text-sm font-semibold text-ink">دليل استيراد الطلاب</p>
+            <p className="mt-1 text-xs leading-6 text-ink-dim">
+              الأعمدة المطلوبة: اسم الطالب، رقم الهوية، رقم الجوال، الصف. أضف الفصل عند الحاجة، واستخدم رقم جوال إضافي وصلة القرابة لجهة اتصال بديلة.
+            </p>
+          </div>
+          <span className="mt-3 inline-flex shrink-0 rounded-lg border border-gold-500/20 bg-gold-500/10 px-2.5 py-1 text-[11px] font-medium text-gold-400 sm:mt-0">
+            XLSX أو XLS
+          </span>
+        </div>
+      )}
+
       {importSummary && (
         <AlertBanner variant={importSummary.errorCount ? 'warning' : 'success'}>
           تم استيراد {importSummary.importedCount} طالب من أصل {importSummary.totalRows} صف.

@@ -61,6 +61,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  background: rgba(200, 162, 77, 0.35);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(200, 162, 77, 0.9);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Compatibility layer for legacy light-only screens inside app pages */
 html.dark .bg-white,
 html.dark .bg-white\/80,

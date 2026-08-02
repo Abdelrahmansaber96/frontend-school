@@ -162,6 +162,7 @@ export interface Student {
   nationalId: string;
   classId: { _id: string; name: string; grade: string; section?: string } | null;
   parentId: { _id: string; userId: { name: { first: string; last: string }; phone: string } } | null;
+  emergencyContacts?: Array<{ phone: string; relationship: string }>;
   gender: 'male' | 'female' | 'unspecified';
   dateOfBirth?: string;
   specialStatus?: string[];

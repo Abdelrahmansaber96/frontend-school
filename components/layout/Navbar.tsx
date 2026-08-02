@@ -62,6 +62,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
       {/* Mobile menu button */}
       <button
+        aria-label="فتح القائمة"
         onClick={onMenuClick}
         className="rounded-lg p-2 text-ink-faint hover:bg-glaze/[0.06] hover:text-ink-dim transition-all duration-200 lg:hidden"
       >
@@ -74,6 +75,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         {/* Dark / Light toggle */}
         {mounted && (
           <button
+            aria-label={theme === 'dark' ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="rounded-xl p-2 text-ink-faint hover:bg-glaze/[0.06] hover:text-ink-dim transition-all duration-200"
             title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -87,6 +89,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
         {/* Notifications bell */}
         <button
+          aria-label="فتح الإشعارات"
           onClick={() => router.push('/notifications')}
           className="relative rounded-xl p-2 text-ink-faint hover:bg-glaze/[0.06] hover:text-ink-dim transition-all duration-200"
         >
@@ -104,6 +107,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         {/* User dropdown */}
         <div className="relative">
           <button
+            aria-label="فتح قائمة الحساب"
             onClick={() => setDropdownOpen((v) => !v)}
             className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-glaze/[0.04] transition-all duration-200"
           >

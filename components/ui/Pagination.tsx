@@ -25,6 +25,7 @@ export default function Pagination({ page, pages, total, onPageChange }: Paginat
       </p>
       <div className="flex items-center gap-1">
         <button
+          aria-label="الصفحة السابقة"
           disabled={page === 1}
           onClick={() => onPageChange(page - 1)}
           className="rounded-lg p-1.5 text-ink-faint hover:bg-glaze/[0.06] hover:text-ink-dim disabled:opacity-30 transition-all duration-200"
@@ -34,6 +35,8 @@ export default function Pagination({ page, pages, total, onPageChange }: Paginat
         {range.map((p) => (
           <button
             key={p}
+            aria-label={`الصفحة ${p}`}
+            aria-current={p === page ? 'page' : undefined}
             onClick={() => onPageChange(p)}
             className={cn(
               'h-8 w-8 rounded-lg text-[13px] font-medium transition-all duration-200',
@@ -46,6 +49,7 @@ export default function Pagination({ page, pages, total, onPageChange }: Paginat
           </button>
         ))}
         <button
+          aria-label="الصفحة التالية"
           disabled={page === pages}
           onClick={() => onPageChange(page + 1)}
           className="rounded-lg p-1.5 text-ink-faint hover:bg-glaze/[0.06] hover:text-ink-dim disabled:opacity-30 transition-all duration-200"
