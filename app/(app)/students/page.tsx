@@ -31,6 +31,7 @@ import { downloadBlobResponse } from '@/lib/download';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
+import ImportedAccountsWhatsAppPanel, { type ImportedAccountWhatsAppItem } from '@/components/accounts/ImportedAccountsWhatsAppPanel';
 import { buildStudentAccountWhatsAppMessage } from '@/lib/whatsapp';
 
 type StudentClassOption = {
@@ -67,6 +68,13 @@ type StudentImportResult = {
     row: number;
     message: string;
   }>;
+  created?: Array<{
+    studentId: string;
+    name: string;
+    nationalId: string;
+    phone: string;
+    temporaryPassword: string;
+  }>;
 };
 
 export default function StudentsPage() {
@@ -88,6 +96,7 @@ export default function StudentsPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
+  const [importedAccounts, setImportedAccounts] = useState<ImportedAccountWhatsAppItem[]>([]);
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -279,10 +288,21 @@ export default function StudentsPage() {
       setImportError(null);
       setImportSummary(null);
       setImportRowErrors([]);
+      setImportedAccounts([]);
     },
     onSuccess: (response) => {
       setImportSummary(response.summary);
       setImportRowErrors(response.errors?.slice(0, 5) ?? []);
+      setImportedAccounts((response.created ?? []).map((item) => ({
+        id: item.studentId,
+        name: item.name,
+        phone: item.phone,
+        message: buildStudentAccountWhatsAppMessage({
+          studentName: item.name,
+          nationalId: item.nationalId,
+          tempPassword: item.temporaryPassword,
+        }),
+      })));
       void qc.invalidateQueries({ queryKey: ['students'] });
     },
     onError: (error) => {
@@ -461,6 +481,8 @@ export default function StudentsPage() {
           الفصل والصف اختياريان، وإذا كانت قيمهما جديدة فسيتم إنشاء الفصل تلقائيًا متى كانت البيانات كافية.
         </AlertBanner>
       )}
+
+      {importedAccounts.length > 0 && <ImportedAccountsWhatsAppPanel accounts={importedAccounts} />}
 
       {importRowErrors.length > 0 && (
         <AlertBanner variant="error">

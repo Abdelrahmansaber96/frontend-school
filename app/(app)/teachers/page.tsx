@@ -25,6 +25,7 @@ import SelectField from '@/components/ui/SelectField';
 import StatusBadge from '@/components/ui/StatusBadge';
 import AccountActionPanel from '@/components/accounts/AccountActionPanel';
 import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
+import ImportedAccountsWhatsAppPanel, { type ImportedAccountWhatsAppItem } from '@/components/accounts/ImportedAccountsWhatsAppPanel';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
 import { buildTeacherAccountWhatsAppMessage } from '@/lib/whatsapp';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
@@ -55,6 +56,13 @@ type TeacherImportResult = {
     row: number;
     message: string;
   }>;
+  created?: Array<{
+    teacherId: string;
+    name: string;
+    nationalId: string;
+    phone: string;
+    temporaryPassword: string;
+  }>;
 };
 
 export default function TeachersPage() {
@@ -70,6 +78,7 @@ export default function TeachersPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<TeacherImportResult['summary'] | null>(null);
+  const [importedAccounts, setImportedAccounts] = useState<ImportedAccountWhatsAppItem[]>([]);
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -188,10 +197,21 @@ export default function TeachersPage() {
       setImportError(null);
       setImportSummary(null);
       setImportRowErrors([]);
+      setImportedAccounts([]);
     },
     onSuccess: (response) => {
       setImportSummary(response.summary);
       setImportRowErrors(response.errors?.slice(0, 5) ?? []);
+      setImportedAccounts((response.created ?? []).map((item) => ({
+        id: item.teacherId,
+        name: item.name,
+        phone: item.phone,
+        message: buildTeacherAccountWhatsAppMessage({
+          teacherName: item.name,
+          nationalId: item.nationalId,
+          tempPassword: item.temporaryPassword,
+        }),
+      })));
       void qc.invalidateQueries({ queryKey: ['teachers'] });
     },
     onError: (error) => {
@@ -307,6 +327,8 @@ export default function TeachersPage() {
           كلمة المرور المؤقتة لكل معلم مستورد هي `Teacher@` متبوعة بآخر 4 أرقام من رقم الهوية.
         </AlertBanner>
       )}
+
+      {importedAccounts.length > 0 && <ImportedAccountsWhatsAppPanel accounts={importedAccounts} />}
 
       {importRowErrors.length > 0 && (
         <AlertBanner variant="error">
