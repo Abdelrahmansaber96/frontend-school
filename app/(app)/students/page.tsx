@@ -30,6 +30,8 @@ import {
 import { downloadBlobResponse } from '@/lib/download';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
 import { useDisclosure } from '@/hooks/useDisclosure';
+import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
+import { buildStudentAccountWhatsAppMessage } from '@/lib/whatsapp';
 
 type StudentClassOption = {
   _id: string;
@@ -40,7 +42,7 @@ type StudentClassOption = {
 
 type ParentOption = {
   _id: string;
-  userId: { name: { first: string; last: string } };
+  userId: { name: { first: string; last: string }; phone: string };
   nationalId: string;
 };
 
@@ -81,6 +83,7 @@ export default function StudentsPage() {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createdAccount, setCreatedAccount] = useState<{ tempPassword: string; phone: string; message: string } | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -218,10 +221,21 @@ export default function StudentsPage() {
         classId: values.classId,
         parentId: values.parentId || undefined,
         dateOfBirth: values.dateOfBirth || undefined,
-      }).then(getEntityPayload<{ student: Student }>),
-    onMutate: () => setCreateError(null),
-    onSuccess: (response) => {
-      void response;
+      }).then(getEntityPayload<{ student: Student; tempPassword?: string | null }>),
+    onMutate: () => { setCreateError(null); setCreatedAccount(null); },
+    onSuccess: (response, values) => {
+      if (response.tempPassword) {
+        const parent = (parentsQuery.data?.items ?? []).find((item) => item._id === values.parentId);
+        setCreatedAccount({
+          tempPassword: response.tempPassword,
+          phone: parent?.userId.phone || values.phone,
+          message: buildStudentAccountWhatsAppMessage({
+            studentName: `${values.firstName} ${values.lastName}`,
+            nationalId: values.nationalId,
+            tempPassword: response.tempPassword,
+          }),
+        });
+      }
       qc.invalidateQueries({ queryKey: ['students'] });
       createDialog.close();
     },
@@ -471,6 +485,8 @@ export default function StudentsPage() {
       {exportError && (
         <AlertBanner variant="error">{exportError}</AlertBanner>
       )}
+
+      {createdAccount && <NewAccountWhatsAppNotice {...createdAccount} />}
 
       <StudentsFilters
         search={search}

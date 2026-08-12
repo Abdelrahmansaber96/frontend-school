@@ -23,7 +23,9 @@ import { useAuthStore } from '@/store/auth.store';
 import SearchField from '@/components/ui/SearchField';
 import StatusBadge from '@/components/ui/StatusBadge';
 import AccountActionPanel from '@/components/accounts/AccountActionPanel';
+import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
+import { buildParentAccountWhatsAppMessage } from '@/lib/whatsapp';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
 import { useDisclosure } from '@/hooks/useDisclosure';
 
@@ -58,7 +60,7 @@ export default function ParentsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [selected, setSelected] = useState<Parent | null>(null);
   const [editingParent, setEditingParent] = useState<Parent | null>(null);
-  const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
+  const [createdAccount, setCreatedAccount] = useState<{ tempPassword: string; phone: string; message: string } | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -101,9 +103,19 @@ export default function ParentsPage() {
         phone: d.phone,
         email: d.email || undefined,
       }).then(getEntityPayload<{ parent: Parent; tempPassword?: string | null }>),
-    onMutate: () => setCreateError(null),
-    onSuccess: (response) => {
-      setCreatedTempPassword(response.tempPassword ?? null);
+    onMutate: () => { setCreateError(null); setCreatedAccount(null); },
+    onSuccess: (response, values) => {
+      if (response.tempPassword) {
+        setCreatedAccount({
+          tempPassword: response.tempPassword,
+          phone: values.phone,
+          message: buildParentAccountWhatsAppMessage({
+            parentName: `${values.firstName} ${values.lastName}`,
+            nationalId: values.nationalId,
+            tempPassword: response.tempPassword,
+          }),
+        });
+      }
       qc.invalidateQueries({ queryKey: ['parents'] });
       createDialog.close();
       reset();
@@ -217,13 +229,7 @@ export default function ParentsPage() {
         )}
       </div>
 
-      {createdTempPassword && (
-        <AlertBanner variant="warning">
-          تم إنشاء حساب ولي الأمر. كلمة المرور المؤقتة:
-          {' '}
-          <span className="font-semibold" dir="ltr">{createdTempPassword}</span>
-        </AlertBanner>
-      )}
+      {createdAccount && <NewAccountWhatsAppNotice {...createdAccount} />}
 
       {/* Table */}
       {parentsQuery.data?.items.length === 0 && !parentsQuery.isLoading ? (

@@ -37,6 +37,34 @@ export const buildWhatsAppUrl = ({ phone, message }: { phone?: string | null; me
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(trimmedMessage)}`;
 };
 
+const getSiteUrl = () => (
+  process.env.NEXT_PUBLIC_APP_URL
+  || (typeof window !== 'undefined' ? window.location.origin : '')
+).replace(/\/$/, '');
+
+export const buildTeacherAccountWhatsAppMessage = ({ teacherName, nationalId, tempPassword }: {
+  teacherName: string; nationalId: string; tempPassword: string;
+}) => joinMessageLines([
+  'السلام عليكم،', `تم إنشاء حساب المعلم ${teacherName}.`, `اسم المستخدم: ${nationalId}`,
+  `كلمة المرور المؤقتة: ${tempPassword}`, `رابط الموقع: ${getSiteUrl()}`,
+  'يرجى تغيير كلمة المرور عند تسجيل الدخول لأول مرة.',
+]);
+
+export const buildStudentAccountWhatsAppMessage = ({ studentName, nationalId, tempPassword }: {
+  studentName: string; nationalId: string; tempPassword: string;
+}) => joinMessageLines([
+  'السلام عليكم،', `تم إنشاء حساب الطالب ${studentName}.`, `هوية الطالب: ${nationalId}`,
+  `كلمة المرور المؤقتة: ${tempPassword}`, `رابط الموقع: ${getSiteUrl()}`,
+]);
+
+export const buildParentAccountWhatsAppMessage = ({ parentName, nationalId, tempPassword }: {
+  parentName: string; nationalId: string; tempPassword: string;
+}) => joinMessageLines([
+  'السلام عليكم،', `تم إنشاء حساب ولي الأمر ${parentName}.`, `اسم المستخدم: ${nationalId}`,
+  `كلمة المرور المؤقتة: ${tempPassword}`, `رابط الموقع: ${getSiteUrl()}`,
+  'يرجى تغيير كلمة المرور عند تسجيل الدخول لأول مرة.',
+]);
+
 export const buildAttendanceWhatsAppMessage = ({
   studentName,
   date,

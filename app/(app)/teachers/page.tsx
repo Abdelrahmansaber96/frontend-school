@@ -24,7 +24,9 @@ import SearchField from '@/components/ui/SearchField';
 import SelectField from '@/components/ui/SelectField';
 import StatusBadge from '@/components/ui/StatusBadge';
 import AccountActionPanel from '@/components/accounts/AccountActionPanel';
+import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
+import { buildTeacherAccountWhatsAppMessage } from '@/lib/whatsapp';
 import { usePaginatedListQuery } from '@/hooks/usePaginatedListQuery';
 import { useDisclosure } from '@/hooks/useDisclosure';
 
@@ -63,7 +65,7 @@ export default function TeachersPage() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Teacher | null>(null);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
-  const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
+  const [createdAccount, setCreatedAccount] = useState<{ tempPassword: string; phone: string; message: string } | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -130,9 +132,19 @@ export default function TeachersPage() {
         subjects: d.subjects?.length ? d.subjects : undefined,
         classes: d.classes?.length ? d.classes : undefined,
       }).then(getEntityPayload<{ teacher: Teacher; tempPassword?: string | null }>),
-    onMutate: () => setCreateError(null),
-    onSuccess: (response) => {
-      setCreatedTempPassword(response.tempPassword ?? null);
+    onMutate: () => { setCreateError(null); setCreatedAccount(null); },
+    onSuccess: (response, values) => {
+      if (response.tempPassword) {
+        setCreatedAccount({
+          tempPassword: response.tempPassword,
+          phone: values.phone,
+          message: buildTeacherAccountWhatsAppMessage({
+            teacherName: `${values.firstName} ${values.lastName}`,
+            nationalId: values.nationalId,
+            tempPassword: response.tempPassword,
+          }),
+        });
+      }
       qc.invalidateQueries({ queryKey: ['teachers'] });
       createDialog.close();
       reset();
@@ -323,13 +335,7 @@ export default function TeachersPage() {
         onChange={(event) => { setSearch(event.target.value); setPage(1); }}
       />
 
-      {createdTempPassword && (
-        <AlertBanner variant="warning">
-          تم إنشاء حساب المعلم. كلمة المرور المؤقتة:
-          {' '}
-          <span className="font-semibold" dir="ltr">{createdTempPassword}</span>
-        </AlertBanner>
-      )}
+      {createdAccount && <NewAccountWhatsAppNotice {...createdAccount} />}
 
       <Table<Teacher>
         columns={columns}
