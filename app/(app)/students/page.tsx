@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useMemo, useRef, useState } from 'react';
-import { Download, FileUp, Plus, Printer } from 'lucide-react';
+import { Download, FileUp, MessageCircle, Plus, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { classesApi, parentsApi, reportsApi, studentsApi } from '@/lib/api';
 import { Student, GradeReportResponse } from '@/types';
@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import Table from '@/components/ui/Table';
 import type { Column } from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import AlertBanner from '@/components/ui/AlertBanner';
@@ -33,6 +34,8 @@ import { useDisclosure } from '@/hooks/useDisclosure';
 import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
 import ImportedAccountsWhatsAppPanel, { type ImportedAccountWhatsAppItem } from '@/components/accounts/ImportedAccountsWhatsAppPanel';
 import { buildStudentAccountWhatsAppMessage } from '@/lib/whatsapp';
+import { buildStudentWelcomeWhatsAppMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { useSchoolBrandingStore } from '@/store/branding.store';
 
 type StudentClassOption = {
   _id: string;
@@ -97,6 +100,11 @@ export default function StudentsPage() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
   const [importedAccounts, setImportedAccounts] = useState<ImportedAccountWhatsAppItem[]>([]);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [welcomeStudents, setWelcomeStudents] = useState<Student[]>([]);
+  const [selectedWelcomeStudents, setSelectedWelcomeStudents] = useState<string[]>([]);
+  const [isLoadingWelcomeStudents, setIsLoadingWelcomeStudents] = useState(false);
+  const { schoolNameAr, schoolName } = useSchoolBrandingStore();
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -218,6 +226,37 @@ export default function StudentsPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const openWelcomeDialog = async () => {
+    setIsLoadingWelcomeStudents(true);
+    try {
+      const response = await studentsApi.list({ page: 1, limit: 500, ...buildScopedStudentParams() }).then(getListPayload<Student>);
+      setWelcomeStudents(response.items);
+      setSelectedWelcomeStudents(response.items.map((student) => student._id));
+      setShowWelcomeDialog(true);
+    } finally {
+      setIsLoadingWelcomeStudents(false);
+    }
+  };
+
+  const openWelcomeWhatsApp = (student: Student) => {
+    const url = buildWhatsAppUrl({
+      phone: student.parentId?.userId?.phone || student.userId.phone,
+      message: buildStudentWelcomeWhatsAppMessage({
+        studentName: fullName(student.userId.name),
+        grade: student.classId?.grade,
+        className: student.classId?.name,
+        schoolName: schoolNameAr || schoolName,
+      }),
+    });
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const openSelectedWelcomeWhatsApp = () => {
+    welcomeStudents
+      .filter((student) => selectedWelcomeStudents.includes(student._id))
+      .forEach(openWelcomeWhatsApp);
   };
 
   const createMutation = useMutation({
@@ -448,6 +487,11 @@ export default function StudentsPage() {
               تنزيل Excel
             </Button>
             {canCreate && (
+              <Button variant="secondary" onClick={openWelcomeDialog} loading={isLoadingWelcomeStudents}>
+                <MessageCircle className="h-4 w-4 me-1" /> رسالة ترحيبية
+              </Button>
+            )}
+            {canCreate && (
               <Button onClick={createDialog.open}>
                 <Plus className="h-4 w-4 me-1" />
                 إضافة طالب
@@ -567,6 +611,46 @@ export default function StudentsPage() {
         parents={parentsQuery.data?.items ?? []}
         errorMessage={createError}
       />
+
+      <Modal
+        open={showWelcomeDialog}
+        onClose={() => setShowWelcomeDialog(false)}
+        title="رسالة ترحيبية للطلاب"
+        size="lg"
+        footer={(
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowWelcomeDialog(false)}>إلغاء</Button>
+            <Button variant="secondary" onClick={() => setSelectedWelcomeStudents(welcomeStudents.map((student) => student._id))}>اختيار الكل</Button>
+            <Button disabled={!selectedWelcomeStudents.length} onClick={openSelectedWelcomeWhatsApp}>
+              <MessageCircle className="h-4 w-4" /> فتح واتساب للمحددين ({selectedWelcomeStudents.length})
+            </Button>
+          </div>
+        )}
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-ink-dim">تُرسل رسالة مخصّصة باسم الطالب وصفه وفصله إلى ولي الأمر، أو إلى رقم الطالب عند عدم وجود ولي أمر. قد يطلب المتصفح السماح بفتح عدة نوافذ واتساب.</p>
+          <div className="max-h-72 divide-y overflow-y-auto rounded-lg border border-stroke">
+            {welcomeStudents.map((student) => (
+              <label key={student._id} className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-glaze/[0.05]">
+                <input
+                  type="checkbox"
+                  checked={selectedWelcomeStudents.includes(student._id)}
+                  onChange={() => setSelectedWelcomeStudents((current) => current.includes(student._id)
+                    ? current.filter((id) => id !== student._id)
+                    : [...current, student._id])}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{fullName(student.userId.name)}</span>
+                  <span className="text-xs text-ink-faint">الصف {student.classId?.grade || 'غير محدد'} — {student.classId?.name || 'بدون فصل'}</span>
+                </span>
+                <Button type="button" size="sm" variant="ghost" onClick={() => openWelcomeWhatsApp(student)}>
+                  <MessageCircle className="h-4 w-4" /> واتساب
+                </Button>
+              </label>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       <StudentDetailsModal
         student={selected}

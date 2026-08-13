@@ -70,16 +70,48 @@ export const buildAttendanceWhatsAppMessage = ({
   date,
   statusLabel,
   notes,
+  schoolName,
 }: {
   studentName: string;
   date: string;
   statusLabel: string;
   notes?: string | null;
+  schoolName?: string | null;
 }) => joinMessageLines([
-  'السلام عليكم،',
-  `نود إشعاركم بأن حالة الطالب/الطالبة ${studentName} بتاريخ ${date} هي: ${statusLabel}.`,
-  notes ? `ملاحظات المعلم: ${notes}` : null,
-  'مع التحية، إدارة المدرسة.',
+  statusLabel === 'غياب'
+    ? `المكرم ولي أمر الطالب/الطالبة: ${studentName}`
+    : 'السلام عليكم،',
+  statusLabel === 'غياب'
+    ? 'السلام عليكم ورحمة الله وبركاته،'
+    : `نود إشعاركم بأن حالة الطالب/الطالبة ${studentName} بتاريخ ${date} هي: ${statusLabel}.`,
+  statusLabel === 'غياب'
+    ? `تفيدكم إدارة المدرسة بأن ابنكم/ابنتكم قد تغيب(ت) عن الدوام المدرسي اليوم ${new Intl.DateTimeFormat('ar-SA', { weekday: 'long' }).format(new Date(`${date}T12:00:00`))} الموافق ${new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${date}T12:00:00`))}، دون إشعار مسبق أو عذر مقبول.`
+    : (notes ? `ملاحظات المعلم: ${notes}` : null),
+  statusLabel === 'غياب'
+    ? 'يرجى التواصل مع إدارة المدرسة لتوضيح سبب الغياب، أو تزويدنا بعذر طبي إذا كان الغياب لظروف صحية، وذلك لحرصنا على مصلحته التعليمية.'
+    : null,
+  statusLabel === 'غياب' ? 'شاكرين ومقدرين حسن تعاونكم معنا.' : null,
+  `إدارة مدرسة: ${schoolName || 'المدرسة'}`,
+]);
+
+export const buildStudentWelcomeWhatsAppMessage = ({
+  studentName,
+  grade,
+  className,
+  schoolName,
+}: {
+  studentName: string;
+  grade?: string | null;
+  className?: string | null;
+  schoolName?: string | null;
+}) => joinMessageLines([
+  `المكرم ولي أمر الطالب/الطالبة: ${studentName}`,
+  'السلام عليكم ورحمة الله وبركاته،',
+  `يسر إدارة مدرسة ${schoolName || 'المدرسة'} الترحيب بكم وبابنكم/ابنتكم ${studentName}.`,
+  `الصف: ${grade || 'غير محدد'}`,
+  `الفصل: ${className || 'غير محدد'}`,
+  'نتطلع إلى عام دراسي موفق ومثمر، ونشكر لكم تعاونكم المستمر.',
+  `إدارة مدرسة: ${schoolName || 'المدرسة'}`,
 ]);
 
 export const buildBehaviorWhatsAppMessage = ({

@@ -9,6 +9,7 @@ import { Plus, Filter, MessageCircle } from 'lucide-react';
 import { attendanceApi, classesApi, studentsApi } from '@/lib/api';
 import { AttendanceRecord, Student } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
+import { useSchoolBrandingStore } from '@/store/branding.store';
 import { fullName, formatDate, getAttendanceBadgeColor } from '@/lib/utils';
 import { buildAttendanceWhatsAppMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import PageHeader from '@/components/ui/PageHeader';
@@ -47,6 +48,7 @@ const ATTENDANCE_TYPES = ['absence', 'late', 'permission'] as const;
 
 export default function AttendancePage() {
   const { user } = useAuthStore();
+  const { schoolNameAr, schoolName } = useSchoolBrandingStore();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [filterDate, setFilterDate] = useState('');
@@ -156,6 +158,7 @@ export default function AttendancePage() {
         date: watchedSingleDate,
         statusLabel: attendanceTypeLabels[watchedSingleType],
         notes: watchedSingleNotes,
+        schoolName: schoolNameAr || schoolName,
       }),
     }));
   };
@@ -168,6 +171,7 @@ export default function AttendancePage() {
         date: watchedBulkDate,
         statusLabel: attendanceTypeLabels[watchedBulkType],
         notes: watchedBulkNotes,
+        schoolName: schoolNameAr || schoolName,
       }),
     }));
   };

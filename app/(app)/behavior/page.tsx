@@ -35,7 +35,7 @@ type CreateForm = z.infer<typeof createSchema>;
 
 const BEHAVIOR_CATEGORIES = {
   positive: ['تفوق أكاديمي', 'مساعدة الآخرين', 'قيادة', 'التزام بالمواعيد', 'عمل جماعي', 'أخرى'],
-  negative: ['إزعاج', 'تنمر', 'غياب', 'عدم احترام', 'غش', 'أخرى'],
+  negative: ['إزعاج', 'تنمر', 'غياب', 'تأخر عن الحصة', 'تأخر عن المدرسة', 'عدم احترام', 'غش', 'أخرى'],
 };
 
 export default function BehaviorPage() {
