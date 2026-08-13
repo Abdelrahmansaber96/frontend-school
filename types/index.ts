@@ -359,14 +359,126 @@ export interface Notification {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-export interface DashboardSummary {
+export type DashboardRange = 'today' | '7d' | '30d';
+export type DashboardDirection = 'up' | 'down' | 'stable';
+
+export interface DashboardKpi {
+  value: number;
+  previousValue: number;
+  changePercent: number;
+  direction: DashboardDirection;
+}
+
+export interface DashboardPerson {
+  _id: string;
+  name: string;
+  phone?: string | null;
+  parentPhone?: string | null;
+}
+
+export interface DashboardClassRef {
+  _id: string;
+  name: string;
+  grade: string;
+  section?: string | null;
+}
+
+export interface DashboardAlert {
+  id: string;
+  type: 'absence' | 'late' | 'permission' | 'negative_behavior' | 'unread_notification';
+  priority: 'critical' | 'high' | 'medium';
+  title: string;
+  description?: string | null;
+  occurredAt: string;
+  student: DashboardPerson | null;
+  class: DashboardClassRef | null;
+  href: string;
+}
+
+export interface DashboardAttentionStudent {
+  id: string;
+  student: DashboardPerson;
+  class: DashboardClassRef | null;
+  absences: number;
+  lates: number;
+  negativeBehaviors: number;
+  total: number;
+}
+
+export interface DashboardClassOverview {
+  class: DashboardClassRef;
+  studentCount: number;
+  absences: number;
+  lates: number;
+  negativeBehaviors: number;
+}
+
+export interface DashboardTrendDay {
+  date: string;
+  absences: number;
+  lates: number;
+  permissions: number;
+  negativeBehaviors: number;
+}
+
+export interface DashboardAcademicItem {
+  _id: string;
+  title: string;
+  percentage: number;
+  examDate: string;
+  student: { _id: string; name: string } | null;
+  subject: { _id: string; name: string } | null;
+}
+
+export interface DashboardChild {
+  student: DashboardPerson;
+  class: DashboardClassRef | null;
+  status: 'absent' | 'late' | 'clear';
+  absences: number;
+  lates: number;
+  permissions: number;
+  negativeBehaviors: number;
+  latestGrade: { title: string; percentage: number; examDate: string } | null;
+}
+
+interface DashboardBase {
+  range: DashboardRange;
+  generatedAt: string;
+  period: { start: string; end: string; previousStart: string; previousEnd: string; days: number };
+  kpis: Partial<Record<'absences' | 'lates' | 'permissions' | 'negativeBehaviors' | 'unreadNotifications' | 'schools' | 'activeSchools' | 'users' | 'newSchools', DashboardKpi>>;
+  alerts: DashboardAlert[];
+  studentsNeedingAttention: DashboardAttentionStudent[];
+  classes: DashboardClassOverview[];
+  weeklyTrend: DashboardTrendDay[];
+  academic: DashboardAcademicItem[];
+  children: DashboardChild[];
+  totals?: { students: number; activeStudents: number; teachers: number; classes: number };
   totalStudents: number;
   activeStudents: number;
   totalTeachers: number;
   totalClasses: number;
+  totalSchools: number;
   todayAttendance: number;
   recentBehavior: number;
 }
+
+export interface PlatformDashboard extends DashboardBase {
+  role: 'super_admin';
+  platform: {
+    totalSchools: number;
+    activeSchools: number;
+    totalUsers: number;
+    newSchools: number;
+    schoolsNeedingAttention: Array<{ _id: string; name: string; nameAr?: string | null; isActive: boolean; updatedAt: string }>;
+  };
+}
+
+export type OperationalDashboard = DashboardBase & {
+  role: 'school_admin' | 'teacher' | 'administrative' | 'parent' | 'student';
+  platform?: never;
+};
+
+export type DashboardSummary = PlatformDashboard | OperationalDashboard;
 
 export interface AttendanceReportDay {
   date: string;

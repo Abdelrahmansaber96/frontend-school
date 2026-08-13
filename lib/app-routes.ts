@@ -1,3 +1,4 @@
-export const getDefaultAppRoute = (role?: string | null) => (
-  role === 'administrative' ? '/attendance' : '/dashboard'
-);
+export const getDefaultAppRoute = (role?: string | null) => {
+  void role;
+  return '/dashboard';
+};

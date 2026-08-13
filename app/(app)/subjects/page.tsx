@@ -47,7 +47,7 @@ export default function SubjectsPage() {
   const [editingSubject, setEditingSubject] = useState<SubjectRecord | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const canViewSubjects = user?.role === 'school_admin' || user?.role === 'teacher';
+  const canViewSubjects = user?.role === 'school_admin' || user?.role === 'teacher' || user?.role === 'student';
   const canManageSubjects = user?.role === 'school_admin';
 
   const subjectsQuery = usePaginatedListQuery<SubjectRecord>({

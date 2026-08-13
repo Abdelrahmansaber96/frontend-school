@@ -82,8 +82,8 @@ const percentageBadgeClassName = (percentage: number) => {
 export default function GradesPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const canViewGrades = hasAnyRole(user?.role, roleGroups.staff);
-  const canManageGrades = hasAnyRole(user?.role, roleGroups.staff);
+  const canViewGrades = hasAnyRole(user?.role, roleGroups.staff) || user?.role === 'student';
+  const canManageGrades = user?.role === 'school_admin' || user?.role === 'teacher';
   const canSelectTeacher = user?.role === 'school_admin';
 
   const [page, setPage] = useState(1);
@@ -104,7 +104,7 @@ export default function GradesPage() {
   const classesQuery = usePaginatedListQuery<ClassOption>({
     queryKey: ['grade-classes-select'],
     queryFn: () => classesApi.list({ page: 1, limit: 200 }),
-    enabled: canViewGrades,
+    enabled: canViewGrades && user?.role !== 'student',
     staleTime: 60_000,
   });
 

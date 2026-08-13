@@ -22,16 +22,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'school_admin', 'teacher', 'parent'] },
+  { label: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'school_admin', 'teacher', 'administrative', 'parent', 'student'] },
   { label: 'المدارس', href: '/schools', icon: School, roles: ['super_admin'] },
   { label: 'الحسابات', href: '/accounts', icon: UsersRound, roles: ['school_admin'] },
   { label: 'المعلمون', href: '/teachers', icon: BookOpen, roles: ['super_admin', 'school_admin'] },
-  { label: 'المواد الدراسية', href: '/subjects', icon: BookOpen, roles: ['school_admin', 'teacher'] },
+  { label: 'المواد الدراسية', href: '/subjects', icon: BookOpen, roles: ['school_admin', 'teacher', 'student'] },
   { label: 'الطلاب', href: '/students', icon: GraduationCap, roles: ['super_admin', 'school_admin', 'teacher'] },
   { label: 'أولياء الأمور', href: '/parents', icon: UsersRound, roles: ['super_admin', 'school_admin'] },
   { label: 'أبنائي', href: '/children', icon: Baby, roles: ['parent'] },
   { label: 'الفصول الدراسية', href: '/classes', icon: BookOpen, roles: ['super_admin', 'school_admin', 'teacher'] },
-  { label: 'الدرجات والاختبارات', href: '/grades', icon: NotebookPen, roles: ['school_admin', 'teacher'] },
+  { label: 'الدرجات والاختبارات', href: '/grades', icon: NotebookPen, roles: ['school_admin', 'teacher', 'student'] },
   { label: 'الحضور والغياب', href: '/attendance', icon: CheckSquare, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
   { label: 'السلوك', href: '/behavior', icon: Flag, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
   { label: 'الرسائل', href: '/messages', icon: MessageSquare, roles: ['school_admin', 'teacher', 'parent'] },

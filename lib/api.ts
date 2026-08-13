@@ -174,7 +174,10 @@ export const authApi = {
 };
 
 export const dashboardApi = {
-  getSummary: () => api.get('/dashboard'),
+  getSummary: (range: import('@/types').DashboardRange = 'today') => api.get<{
+    success: boolean;
+    data: import('@/types').DashboardSummary;
+  }>('/dashboard', { params: { range } }),
 };
 
 export const schoolsApi = {
