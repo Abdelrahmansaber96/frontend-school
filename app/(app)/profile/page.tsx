@@ -5,9 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Trash2, TriangleAlert } from 'lucide-react';
+import { DatabaseBackup, Download, Trash2, TriangleAlert, Upload } from 'lucide-react';
 import { schoolsApi, usersApi } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-contracts';
+import { downloadBlobResponse } from '@/lib/download';
 import { useAuthStore } from '@/store/auth.store';
 import { fullName } from '@/lib/utils';
 import PageHeader from '@/components/ui/PageHeader';
@@ -27,6 +28,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const PURGE_CONFIRMATION_TEXT = 'حذف جميع البيانات';
+const RESTORE_CONFIRMATION_TEXT = 'استبدال جميع البيانات';
 const arabicIntegerFormatter = new Intl.NumberFormat('ar-EG');
 
 type PurgeSchoolDataResponse = {
@@ -49,6 +51,12 @@ type PurgeSchoolDataResponse = {
   totalDeleted: number;
 };
 
+type RestoreSchoolBackupResponse = {
+  mode: 'merge' | 'replace';
+  counts: Record<string, number>;
+  temporaryPasswordRule: string;
+};
+
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
   const queryClient = useQueryClient();
@@ -57,6 +65,12 @@ export default function ProfilePage() {
   const [purgeConfirmationText, setPurgeConfirmationText] = useState('');
   const [purgeSuccess, setPurgeSuccess] = useState<PurgeSchoolDataResponse | null>(null);
   const [purgeError, setPurgeError] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
+  const [restoreFile, setRestoreFile] = useState<{ name: string; payload: object } | null>(null);
+  const [restoreMode, setRestoreMode] = useState<'merge' | 'replace'>('merge');
+  const [restoreConfirmationText, setRestoreConfirmationText] = useState('');
+  const [restoreSuccess, setRestoreSuccess] = useState<RestoreSchoolBackupResponse | null>(null);
   const canPurgeSchoolData = user?.role === 'school_admin';
 
   const { data: meData, isLoading } = useQuery({
@@ -110,6 +124,28 @@ export default function ProfilePage() {
     },
   });
 
+  const restoreSchoolBackupMutation = useMutation({
+    mutationFn: () => schoolsApi.restoreBackup({
+      backup: restoreFile?.payload || {},
+      mode: restoreMode,
+      confirmationText: restoreConfirmationText.trim(),
+    }).then((response) => response.data.data as RestoreSchoolBackupResponse),
+    onMutate: () => {
+      setBackupError(null);
+      setBackupSuccess(null);
+      setRestoreSuccess(null);
+    },
+    onSuccess: async (summary) => {
+      setRestoreSuccess(summary);
+      setRestoreConfirmationText('');
+      setRestoreFile(null);
+      await queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      setBackupError(getApiErrorMessage(error, 'تعذرت استعادة النسخة الاحتياطية.'));
+    },
+  });
+
   const purgeSummaryText = purgeSuccess
     ? `تم حذف ${arabicIntegerFormatter.format(purgeSuccess.totalDeleted)} عنصرًا، منها ${arabicIntegerFormatter.format(purgeSuccess.counts.students)} طالب، ${arabicIntegerFormatter.format(purgeSuccess.counts.teachers)} معلم، ${arabicIntegerFormatter.format(purgeSuccess.counts.parents)} ولي أمر، ${arabicIntegerFormatter.format(purgeSuccess.counts.classes)} فصل، و${arabicIntegerFormatter.format(purgeSuccess.counts.subjects)} مادة. تم الإبقاء على حسابات مديري المدرسة وبيانات المدرسة الأساسية.`
     : null;
@@ -125,6 +161,45 @@ export default function ProfilePage() {
     }
 
     purgeSchoolDataMutation.mutate();
+  };
+
+  const handleDownloadBackup = async () => {
+    try {
+      setBackupError(null);
+      setBackupSuccess(null);
+      const response = await schoolsApi.downloadBackup();
+      downloadBlobResponse(response, `school-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      setBackupSuccess('تم تنزيل النسخة الاحتياطية. احتفظ بها في مكان آمن.');
+    } catch (error) {
+      setBackupError(getApiErrorMessage(error, 'تعذر تنزيل النسخة الاحتياطية.'));
+    }
+  };
+
+  const handleRestoreFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      const payload = JSON.parse(await file.text()) as { format?: string; version?: number };
+      if (payload.format !== 'basma-school-backup' || payload.version !== 1) {
+        throw new Error('ملف غير مدعوم');
+      }
+      setRestoreFile({ name: file.name, payload });
+      setBackupError(null);
+      setRestoreSuccess(null);
+    } catch {
+      setRestoreFile(null);
+      setBackupError('ملف النسخة الاحتياطية غير صالح. اختر ملف JSON تم تنزيله من المنصة.');
+    }
+  };
+
+  const handleRestoreBackup = () => {
+    if (!restoreFile || (restoreMode === 'replace' && restoreConfirmationText.trim() !== RESTORE_CONFIRMATION_TEXT)) return;
+    const message = restoreMode === 'replace'
+      ? 'سيتم حذف بيانات المدرسة الحالية ثم استبدالها بمحتوى النسخة الاحتياطية. هل تريد المتابعة؟'
+      : 'سيتم إضافة البيانات غير الموجودة من النسخة الاحتياطية دون حذف البيانات الحالية. هل تريد المتابعة؟';
+    if (window.confirm(message)) restoreSchoolBackupMutation.mutate();
   };
 
   if (isLoading) return <PageSpinner />;
@@ -148,6 +223,9 @@ export default function ProfilePage() {
       {purgeError && (
         <AlertBanner variant="error">{purgeError}</AlertBanner>
       )}
+
+      {backupSuccess && <AlertBanner variant="success">{backupSuccess}</AlertBanner>}
+      {backupError && <AlertBanner variant="error">{backupError}</AlertBanner>}
 
       {/* Profile card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -199,6 +277,64 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {canPurgeSchoolData && (
+        <div className="rounded-xl border border-primary-200 bg-primary-50/40 p-6 space-y-5">
+          <div className="flex items-center gap-2 border-b border-primary-200 pb-3">
+            <DatabaseBackup className="h-4 w-4 text-primary-700" />
+            <h3 className="text-sm font-semibold text-primary-800">النسخ الاحتياطي والاستعادة</h3>
+          </div>
+          <p className="text-sm text-gray-700">نزّل نسخة JSON من بيانات المدرسة، ثم يمكنك استعادتها لاحقًا. لا تشمل النسخة كلمات المرور أو الجلسات أو الملفات المرفوعة.</p>
+          <div className="flex flex-wrap gap-3">
+            <Button type="button" variant="outline" onClick={handleDownloadBackup}>
+              <Download className="h-4 w-4" />
+              تنزيل نسخة احتياطية
+            </Button>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-primary-300 bg-white px-4 py-2 text-sm font-medium text-primary-800 hover:bg-primary-50">
+              <Upload className="h-4 w-4" />
+              اختيار ملف للاستعادة
+              <input className="sr-only" type="file" accept="application/json,.json" onChange={handleRestoreFileChange} />
+            </label>
+          </div>
+
+          {restoreFile && (
+            <div className="space-y-4 rounded-lg border border-primary-200 bg-white p-4">
+              <p className="text-sm text-gray-700">الملف المختار: <span className="font-semibold">{restoreFile.name}</span></p>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-gray-900">طريقة الاستعادة</legend>
+                <label className="flex gap-2 text-sm text-gray-700">
+                  <input type="radio" name="restore-mode" checked={restoreMode === 'merge'} onChange={() => setRestoreMode('merge')} />
+                  دمج آمن: إضافة السجلات غير الموجودة دون حذف البيانات الحالية.
+                </label>
+                <label className="flex gap-2 text-sm text-red-700">
+                  <input type="radio" name="restore-mode" checked={restoreMode === 'replace'} onChange={() => setRestoreMode('replace')} />
+                  استبدال كامل: حذف البيانات الحالية ثم استعادتها من النسخة.
+                </label>
+              </fieldset>
+              {restoreMode === 'replace' && (
+                <Input
+                  label={`للتأكيد اكتب العبارة التالية حرفيًا: ${RESTORE_CONFIRMATION_TEXT}`}
+                  value={restoreConfirmationText}
+                  onChange={(event) => setRestoreConfirmationText(event.target.value)}
+                  placeholder={RESTORE_CONFIRMATION_TEXT}
+                />
+              )}
+              <div className="flex justify-end">
+                <Button type="button" variant={restoreMode === 'replace' ? 'danger' : 'primary'} loading={restoreSchoolBackupMutation.isPending} disabled={restoreMode === 'replace' && restoreConfirmationText.trim() !== RESTORE_CONFIRMATION_TEXT} onClick={handleRestoreBackup}>
+                  <Upload className="h-4 w-4" />
+                  {restoreMode === 'replace' ? 'استبدال واستعادة البيانات' : 'دمج واستعادة البيانات'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {restoreSuccess && (
+            <AlertBanner variant="success">
+              تمّت الاستعادة بنجاح. أضيف {arabicIntegerFormatter.format(Object.values(restoreSuccess.counts).reduce((total, count) => total + count, 0))} سجلًا. الحسابات المستعادة تستخدم كلمة مؤقتة: {restoreSuccess.temporaryPasswordRule}.
+            </AlertBanner>
+          )}
+        </div>
+      )}
 
       {canPurgeSchoolData && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 space-y-5">
