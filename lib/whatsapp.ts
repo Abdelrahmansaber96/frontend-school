@@ -114,6 +114,49 @@ export const buildStudentWelcomeWhatsAppMessage = ({
   `إدارة مدرسة: ${schoolName || 'المدرسة'}`,
 ]);
 
+export const DEFAULT_STUDENT_BROADCAST_TEMPLATE = joinMessageLines([
+  'المكرم ولي أمر الطالب/الطالبة: {اسم_الطالب}',
+  'السلام عليكم ورحمة الله وبركاته،',
+  'يسر {اسم_المدرسة} الترحيب بكم وبابنكم/ابنتكم.',
+  'الصف: {الصف}',
+  'الفصل: {الفصل}',
+  'شاكرين لكم حسن تعاونكم.',
+]);
+
+export const applyStudentMessageTemplate = (template: string, values: {
+  studentName: string;
+  grade?: string | null;
+  className?: string | null;
+  schoolName?: string | null;
+}) => template
+  .replaceAll('{اسم_الطالب}', values.studentName || '—')
+  .replaceAll('{الصف}', values.grade || 'غير محدد')
+  .replaceAll('{الفصل}', values.className || 'غير محدد')
+  .replaceAll('{اسم_المدرسة}', values.schoolName || 'المدرسة');
+
+export const buildRecoveryCodeWhatsAppMessage = ({ studentName, code }: { studentName: string; code: string }) => joinMessageLines([
+  'السلام عليكم ورحمة الله وبركاته،',
+  `رمز استعادة حساب الطالب/الطالبة ${studentName}: ${code}`,
+  'الرمز صالح لمدة 10 دقائق ويستخدم مرة واحدة فقط. لا تشاركه مع أي شخص.',
+]);
+
+export const buildPasswordChangedConfirmationMessage = ({ studentName }: { studentName: string }) => joinMessageLines([
+  'السلام عليكم ورحمة الله وبركاته،',
+  `تم تغيير كلمة مرور حساب الطالب/الطالبة ${studentName} بنجاح.`,
+  'إذا لم يتم هذا الإجراء بمعرفتكم يرجى التواصل مع إدارة المدرسة فورًا.',
+]);
+
+export const buildPasswordResetWhatsAppMessage = ({ name, identifier, tempPassword }: {
+  name: string; identifier: string; tempPassword: string;
+}) => joinMessageLines([
+  'السلام عليكم ورحمة الله وبركاته،',
+  `تمت إعادة تعيين كلمة المرور المؤقتة لحساب ${name}.`,
+  `اسم المستخدم/رقم الهوية: ${identifier}`,
+  `كلمة المرور المؤقتة: ${tempPassword}`,
+  `رابط الموقع: ${getSiteUrl()}`,
+  'يرجى تغييرها عند تسجيل الدخول. لن يمكن عرض هذه الكلمة مرة أخرى.',
+]);
+
 export const buildBehaviorWhatsAppMessage = ({
   studentName,
   behaviorLabel,
