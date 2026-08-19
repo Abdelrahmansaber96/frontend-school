@@ -8,7 +8,15 @@ import {
 import { getDefaultAppRoute } from '@/lib/app-routes';
 
 const PUBLIC_PATHS = ['/'];
-const AUTH_PATHS = ['/login', '/register'];
+// These pages must remain accessible without a session; otherwise the
+// middleware redirects the recovery link back to login before it can render.
+const AUTH_PATHS = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+];
 
 const matchesPath = (pathname: string, paths: string[]) => paths.some(
   (path) => pathname === path || (path !== '/' && pathname.startsWith(`${path}/`)),

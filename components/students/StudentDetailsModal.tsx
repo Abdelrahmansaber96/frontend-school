@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { MessageCircle } from 'lucide-react';
 import AlertBanner from '@/components/ui/AlertBanner';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
@@ -25,6 +26,7 @@ interface StudentDetailsModalProps {
   canEdit?: boolean;
   onEditRequest?: () => void;
   onStudentUpdate?: (student: Student) => void;
+  onWhatsApp?: (student: Student) => void;
 }
 
 const academicLevelBadgeStyles = {
@@ -41,6 +43,7 @@ export default function StudentDetailsModal({
   canEdit = false,
   onEditRequest,
   onStudentUpdate,
+  onWhatsApp,
 }: StudentDetailsModalProps) {
   const gradeProfileQuery = useQuery<StudentGradeProfileResponse>({
     queryKey: ['student-grade-profile', student?._id],
@@ -65,9 +68,10 @@ export default function StudentDetailsModal({
             </div>
           </div>
 
-          {canEdit && onEditRequest && (
-            <div className="flex justify-end">
-              <Button variant="secondary" onClick={onEditRequest}>تعديل البيانات</Button>
+          {(onWhatsApp || (canEdit && onEditRequest)) && (
+            <div className="flex flex-wrap justify-end gap-2">
+              {onWhatsApp && <Button variant="secondary" onClick={() => onWhatsApp(student)}><MessageCircle className="h-4 w-4" /> تواصل واتساب</Button>}
+              {canEdit && onEditRequest && <Button variant="secondary" onClick={onEditRequest}>تعديل البيانات</Button>}
             </div>
           )}
 

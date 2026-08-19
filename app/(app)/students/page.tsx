@@ -610,6 +610,10 @@ export default function StudentsPage() {
           setSelected(null);
         }}
         onStudentUpdate={(updatedStudent) => setSelected(updatedStudent)}
+        onWhatsApp={(student) => {
+          setSelected(null);
+          setWhatsAppStudentId(student._id);
+        }}
       />
 
       <StudentEditModal
