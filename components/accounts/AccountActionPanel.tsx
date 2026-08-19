@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, UserCheck, UserX } from 'lucide-react';
+import { KeyRound, MessageCircle, UserCheck, UserX } from 'lucide-react';
 import { authApi, usersApi } from '@/lib/api';
 import { getApiErrorMessage, getEntityPayload } from '@/lib/api-contracts';
 import { formatDateTime } from '@/lib/utils';
@@ -11,6 +11,8 @@ import AlertBanner from '@/components/ui/AlertBanner';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
+import Input from '@/components/ui/Input';
+import { buildPasswordResetWhatsAppMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 
 interface AccountActionPanelProps {
   account: {
@@ -23,6 +25,8 @@ interface AccountActionPanelProps {
   entityLabel: string;
   invalidateQueryKeys: readonly (readonly unknown[])[];
   onAccountUpdated?: (updates: { isActive?: boolean; mustChangePassword?: boolean }) => void;
+  contactPhone?: string | null;
+  identifier?: string;
 }
 
 export default function AccountActionPanel({
@@ -30,6 +34,8 @@ export default function AccountActionPanel({
   entityLabel,
   invalidateQueryKeys,
   onAccountUpdated,
+  contactPhone,
+  identifier,
 }: AccountActionPanelProps) {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -42,6 +48,7 @@ export default function AccountActionPanel({
   });
   const [busyAction, setBusyAction] = useState<'reset' | 'activate' | 'deactivate' | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [customPassword, setCustomPassword] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
@@ -74,7 +81,7 @@ export default function AccountActionPanel({
   };
 
   const resetPasswordMutation = useMutation({
-    mutationFn: () => authApi.resetPassword(account._id).then(getEntityPayload<{ tempPassword?: string | null }>),
+    mutationFn: () => authApi.resetPassword(account._id, customPassword || undefined).then(getEntityPayload<{ tempPassword?: string | null }>),
     onMutate: () => {
       clearMessages();
       setTempPassword(null);
@@ -181,15 +188,30 @@ export default function AccountActionPanel({
       )}
 
       <div className="flex flex-wrap gap-2">
+        <div className="w-full sm:max-w-sm">
+          <Input label="كلمة مؤقتة مخصصة (اختياري)" value={customPassword} onChange={(event) => setCustomPassword(event.target.value)} placeholder="اتركها فارغة للتوليد التلقائي" dir="ltr" />
+          <p className="mt-1 text-xs text-ink-faint">8 أحرف على الأقل، وحرف كبير وصغير ورقم.</p>
+        </div>
+        <div className="w-full" />
         <Button
           size="sm"
           variant="outline"
           loading={busyAction === 'reset' && resetPasswordMutation.isPending}
+          disabled={Boolean(customPassword) && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(customPassword)}
           onClick={() => resetPasswordMutation.mutate()}
         >
           <KeyRound className="h-3.5 w-3.5" />
           إعادة تعيين كلمة المرور
         </Button>
+
+        {tempPassword && contactPhone && (
+          <Button size="sm" variant="secondary" onClick={() => {
+            const url = buildWhatsAppUrl({ phone: contactPhone, message: buildPasswordResetWhatsAppMessage({ name: account.name, identifier: identifier || account.name, tempPassword }) });
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+          }}>
+            <MessageCircle className="h-3.5 w-3.5" /> إرسال الكلمة المؤقتة عبر واتساب
+          </Button>
+        )}
 
         {state.isActive ? (
           <Button

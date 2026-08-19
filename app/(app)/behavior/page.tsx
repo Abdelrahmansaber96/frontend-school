@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Filter, ThumbsUp, ThumbsDown, Paperclip, Loader2, X, MessageCircle } from 'lucide-react';
-import { behaviorApi, classesApi, studentsApi, uploadsApi } from '@/lib/api';
+import { behaviorApi, classesApi, studentsApi, teachersApi, uploadsApi } from '@/lib/api';
 import { BehaviorRecord, FileAttachment, Student, UploadedFile } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { fullName, formatDate } from '@/lib/utils';
@@ -43,22 +43,32 @@ export default function BehaviorPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [filterGrade, setFilterGrade] = useState('');
+  const [filterStudent, setFilterStudent] = useState('');
+  const [filterTeacher, setFilterTeacher] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [uploadedAttachments, setUploadedAttachments] = useState<FileAttachment[]>([]);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['behavior', page, filterType],
+    queryKey: ['behavior', page, filterType, filterClass, filterCategory, filterStartDate, filterEndDate, filterGrade, filterStudent, filterTeacher],
     queryFn: () =>
-      behaviorApi.list({ page, limit: 15, type: filterType || undefined }).then((r) => r.data),
+      behaviorApi.list({ page, limit: 15, type: filterType || undefined, classId: filterClass || undefined, grade: filterGrade || undefined, studentId: filterStudent || undefined, teacherId: filterTeacher || undefined, category: filterCategory || undefined, startDate: filterStartDate || undefined, endDate: filterEndDate || undefined }).then((r) => r.data),
     staleTime: 15_000,
   });
+
+  const { data: filterStudentsData } = useQuery({ queryKey: ['behavior-filter-students', filterClass, filterGrade], queryFn: () => studentsApi.list({ page: 1, limit: 500, classId: filterClass || undefined, grade: filterGrade || undefined }).then((r) => r.data), staleTime: 60_000 });
+  const { data: filterTeachersData } = useQuery({ queryKey: ['behavior-filter-teachers'], queryFn: () => teachersApi.list({ page: 1, limit: 500 }).then((r) => r.data), enabled: user?.role === 'school_admin', staleTime: 60_000 });
 
   const { data: classesData } = useQuery({
     queryKey: ['classes-select'],
     queryFn: () => classesApi.list({ page: 1, limit: 100 }).then((r) => r.data),
-    enabled: showCreate,
+    enabled: true,
   });
 
   const {
@@ -280,8 +290,15 @@ export default function BehaviorPage() {
           <option value="positive">إيجابي</option>
           <option value="negative">سلبي</option>
         </select>
-        {filterType && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterType(''); setPage(1); }}>
+        <select value={filterClass} onChange={(e) => { setFilterClass(e.target.value); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع الفصول</option>{(classesData?.data ?? []).map((item: { _id: string; name: string; grade: string }) => <option key={item._id} value={item._id}>{item.name} — صف {item.grade}</option>)}</select>
+        <select value={filterGrade} onChange={(e) => { setFilterGrade(e.target.value); setFilterClass(''); setFilterStudent(''); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع الصفوف</option>{Array.from(new Set((classesData?.data ?? []).map((item: { grade: string }) => item.grade))).map((grade) => <option key={String(grade)} value={String(grade)}>{String(grade)}</option>)}</select>
+        <select value={filterStudent} onChange={(e) => { setFilterStudent(e.target.value); setPage(1); }} className="max-w-52 rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع الطلاب</option>{(filterStudentsData?.data ?? []).map((item: Student) => <option key={item._id} value={item._id}>{fullName(item.userId.name)}</option>)}</select>
+        {user?.role === 'school_admin' && <select value={filterTeacher} onChange={(e) => { setFilterTeacher(e.target.value); setPage(1); }} className="max-w-52 rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع المعلمين</option>{(filterTeachersData?.data ?? []).map((item: { _id: string; userId: { name: { first: string; last: string } } }) => <option key={item._id} value={item._id}>{fullName(item.userId.name)}</option>)}</select>}
+        <input value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }} placeholder="فئة السلوك" className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+        <input type="date" aria-label="من تاريخ" value={filterStartDate} onChange={(e) => { setFilterStartDate(e.target.value); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+        <input type="date" aria-label="إلى تاريخ" value={filterEndDate} onChange={(e) => { setFilterEndDate(e.target.value); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+        {(filterType || filterClass || filterCategory || filterStartDate || filterEndDate || filterGrade || filterStudent || filterTeacher) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterType(''); setFilterClass(''); setFilterCategory(''); setFilterStartDate(''); setFilterEndDate(''); setFilterGrade(''); setFilterStudent(''); setFilterTeacher(''); setPage(1); }}>
             مسح
           </Button>
         )}

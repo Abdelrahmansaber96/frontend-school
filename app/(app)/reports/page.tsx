@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, BookOpenCheck, Download, GraduationCap, Medal, NotebookPen, Target, Trophy, Users } from 'lucide-react';
-import { attendanceApi, reportsApi, studentsApi } from '@/lib/api';
+import { attendanceApi, classesApi, reportsApi, studentsApi, teachersApi } from '@/lib/api';
 import {
   getApiErrorMessage,
   getAttendanceReportPayload,
@@ -15,11 +15,12 @@ import { downloadBlobResponse } from '@/lib/download';
 import { getAssessmentTypeLabel, getSubjectDisplayName } from '@/lib/grade-utils';
 import { hasAnyRole, roleGroups } from '@/lib/role-access';
 import { useAuthStore } from '@/store/auth.store';
-import type { AttendanceRecord, AttendanceReportResponse, BehaviorReportResponse, GradeReportResponse, Student } from '@/types';
+import type { AttendanceRecord, AttendanceReportResponse, BehaviorReportResponse, GradeReportResponse, Student, Teacher } from '@/types';
 import { fullName } from '@/lib/utils';
 import AlertBanner from '@/components/ui/AlertBanner';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import SelectField from '@/components/ui/SelectField';
 import RestrictedAccessState from '@/components/ui/RestrictedAccessState';
 import { PageSpinner } from '@/components/ui/Spinner';
 import ReportsDateRangeFilters from '@/components/reports/ReportsDateRangeFilters';
@@ -81,6 +82,9 @@ export default function ReportsPage() {
   const [appliedRange, setAppliedRange] = useState(getDefaultRange);
   const [exporting, setExporting] = useState<`${ReportExportType}:${ExportFormat}` | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [scopeType, setScopeType] = useState<'student' | 'class' | 'teacher'>('student');
+  const [scopeId, setScopeId] = useState('');
+  const [comprehensiveExporting, setComprehensiveExporting] = useState<ExportFormat | null>(null);
   const isInvalidRange = draftRange.startDate > draftRange.endDate;
 
   const attendanceQuery = useQuery<AttendanceReportResponse>({
@@ -97,6 +101,15 @@ export default function ReportsPage() {
     enabled: canViewReports && !isTeacherReportView,
     placeholderData: (previousData) => previousData,
     staleTime: 60_000,
+  });
+
+  const reportClassesQuery = useQuery({
+    queryKey: ['reports-classes'], queryFn: () => classesApi.list({ page: 1, limit: 500 }).then(getListPayload<{ _id: string; name: string; grade: string } >),
+    enabled: canViewReports && !isTeacherReportView, staleTime: 60_000,
+  });
+  const reportTeachersQuery = useQuery({
+    queryKey: ['reports-teachers'], queryFn: () => teachersApi.list({ page: 1, limit: 500 }).then(getListPayload<Teacher>),
+    enabled: canViewReports && !isTeacherReportView, staleTime: 60_000,
   });
 
   const attendanceRecordsQuery = useQuery({
@@ -157,6 +170,22 @@ export default function ReportsPage() {
       setExporting(null);
     }
   };
+
+  const handleComprehensiveExport = async (format: ExportFormat) => {
+    if (!scopeId) return;
+    setExportError(null); setComprehensiveExporting(format);
+    try {
+      const response = await reportsApi.exportComprehensive({ scopeType, scopeId, ...appliedRange, format });
+      downloadBlobResponse(response, `comprehensive-${scopeType}-${scopeId}.${format}`);
+    } catch (error) { setExportError(getApiErrorMessage(error, 'تعذر تصدير التقرير الشامل.')); }
+    finally { setComprehensiveExporting(null); }
+  };
+
+  const comprehensiveOptions = scopeType === 'student'
+    ? (studentRosterQuery.data?.items || []).map((item) => ({ id: item._id, label: `${fullName(item.userId.name)} — ${item.classId?.name || 'بدون فصل'}` }))
+    : scopeType === 'class'
+      ? (reportClassesQuery.data?.items || []).map((item) => ({ id: item._id, label: `${item.name} — صف ${item.grade}` }))
+      : (reportTeachersQuery.data?.items || []).map((item) => ({ id: item._id, label: fullName(item.userId.name) }));
 
   const studentRoster = studentRosterQuery.data?.items;
   const attendanceRows = attendanceQuery.data?.daily;
@@ -303,6 +332,17 @@ export default function ReportsPage() {
           />
         </div>
       </section>
+
+      {!isTeacherReportView && (
+        <section className="rounded-2xl border border-stroke bg-glaze/[0.03] p-4 sm:p-5">
+          <div className="mb-4"><h2 className="font-semibold text-ink">التقرير الشامل</h2><p className="mt-1 text-xs text-ink-faint">اختر طالبًا أو فصلًا أو معلمًا، ثم نزّل تقريرًا بهوية المدرسة والتاريخ الميلادي والهجري.</p></div>
+          <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+            <SelectField label="نطاق التقرير" value={scopeType} onChange={(event) => { setScopeType(event.target.value as typeof scopeType); setScopeId(''); }}><option value="student">طالب</option><option value="class">فصل</option><option value="teacher">معلم</option></SelectField>
+            <SelectField label="الاختيار" value={scopeId} onChange={(event) => setScopeId(event.target.value)}><option value="">اختر...</option>{comprehensiveOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectField>
+            <div className="grid grid-cols-3 gap-2">{exportFormats.map((format) => <Button key={format.key} size="sm" variant="outline" disabled={!scopeId} loading={comprehensiveExporting === format.key} onClick={() => handleComprehensiveExport(format.key)}>{format.label}</Button>)}</div>
+          </div>
+        </section>
+      )}
 
       {isInvalidRange && (
         <AlertBanner variant="error">

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, GraduationCap, BookOpen, CheckSquare, Flag,
+  LayoutDashboard, GraduationCap, BookOpen, CheckSquare, Flag, KeyRound,
   MessageSquare, Bell, BarChart3, School, X, ChevronRight, Baby, UserCircle, UsersRound, UploadCloud, NotebookPen,
 } from 'lucide-react';
 import { cn, fullName } from '@/lib/utils';
@@ -24,11 +24,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'school_admin', 'teacher', 'administrative', 'parent', 'student'] },
   { label: 'المدارس', href: '/schools', icon: School, roles: ['super_admin'] },
+  { label: 'أكواد تسجيل المدارس', href: '/registration-invites', icon: KeyRound, roles: ['super_admin'] },
   { label: 'الحسابات', href: '/accounts', icon: UsersRound, roles: ['school_admin'] },
+  { label: 'طلبات استعادة الطلاب', href: '/recovery-requests', icon: KeyRound, roles: ['school_admin'] },
   { label: 'المعلمون', href: '/teachers', icon: BookOpen, roles: ['super_admin', 'school_admin'] },
   { label: 'المواد الدراسية', href: '/subjects', icon: BookOpen, roles: ['school_admin', 'teacher', 'student'] },
   { label: 'الطلاب', href: '/students', icon: GraduationCap, roles: ['super_admin', 'school_admin', 'teacher'] },
-  { label: 'أولياء الأمور', href: '/parents', icon: UsersRound, roles: ['super_admin', 'school_admin'] },
   { label: 'أبنائي', href: '/children', icon: Baby, roles: ['parent'] },
   { label: 'الفصول الدراسية', href: '/classes', icon: BookOpen, roles: ['super_admin', 'school_admin', 'teacher'] },
   { label: 'الدرجات والاختبارات', href: '/grades', icon: NotebookPen, roles: ['school_admin', 'teacher', 'student'] },

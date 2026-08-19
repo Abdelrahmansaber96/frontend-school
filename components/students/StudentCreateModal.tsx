@@ -19,7 +19,31 @@ export const studentCreateSchema = z.object({
   gender: z.enum(['male', 'female', 'unspecified']),
   classId: z.string().min(1, 'Required'),
   parentId: z.string().optional(),
+  parentMode: z.enum(['none', 'existing', 'new']),
+  parentFirstName: z.string().optional(),
+  parentLastName: z.string().optional(),
+  parentNationalId: z.string().optional(),
+  parentPhone: z.string().optional(),
+  parentEmail: z.string().email('البريد الإلكتروني غير صحيح').optional().or(z.literal('')),
+  passwordMode: z.enum(['default', 'custom']),
+  temporaryPassword: z.string().optional(),
   dateOfBirth: z.string().optional(),
+}).superRefine((values, context) => {
+  if (values.passwordMode === 'custom' && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(values.temporaryPassword || '')) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['temporaryPassword'], message: '8 أحرف على الأقل وتحتوي حرفًا كبيرًا وصغيرًا ورقمًا' });
+  }
+  if (values.parentMode === 'existing' && !values.parentId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['parentId'], message: 'اختر ولي الأمر' });
+  }
+  if (values.parentMode === 'new') {
+    const required: Array<[keyof typeof values, string]> = [
+      ['parentFirstName', 'أدخل اسم ولي الأمر'], ['parentLastName', 'أدخل اسم العائلة'],
+      ['parentNationalId', 'أدخل رقم الهوية'], ['parentPhone', 'أدخل رقم الجوال'],
+    ];
+    required.forEach(([path, message]) => {
+      if (!String(values[path] || '').trim()) context.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+    });
+  }
 });
 
 export type StudentCreateFormValues = z.infer<typeof studentCreateSchema>;
@@ -33,7 +57,7 @@ interface StudentClassOption {
 
 interface StudentParentOption {
   _id: string;
-  userId: { name: { first: string; last: string } };
+  userId: { name: { first: string; last: string }; phone?: string };
   nationalId: string;
 }
 
@@ -56,10 +80,12 @@ export default function StudentCreateModal({
   parents,
   errorMessage,
 }: StudentCreateModalProps) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<StudentCreateFormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<StudentCreateFormValues>({
     resolver: zodResolver(studentCreateSchema),
-    defaultValues: { gender: 'unspecified', parentId: '' },
+    defaultValues: { gender: 'unspecified', parentId: '', parentMode: 'none', passwordMode: 'default' },
   });
+  const parentMode = watch('parentMode');
+  const passwordMode = watch('passwordMode');
 
   useEffect(() => {
     if (!open) {
@@ -71,6 +97,10 @@ export default function StudentCreateModal({
         gender: 'unspecified',
         classId: '',
         parentId: '',
+        parentMode: 'none',
+        passwordMode: 'default',
+        temporaryPassword: '',
+        parentFirstName: '', parentLastName: '', parentNationalId: '', parentPhone: '', parentEmail: '',
         dateOfBirth: '',
       });
     }
@@ -108,14 +138,31 @@ export default function StudentCreateModal({
             </option>
           ))}
         </SelectField>
-        <SelectField label="ولي الأمر (اختياري)" {...register('parentId')} error={errors.parentId?.message}>
-          <option value="">بدون ولي أمر</option>
-          {parents.map((parent) => (
-            <option key={parent._id} value={parent._id}>
-              {fullName(parent.userId.name)} - {parent.nationalId}
-            </option>
-          ))}
+        <SelectField label="إدارة ولي الأمر" {...register('parentMode')}>
+          <option value="none">بدون ربط الآن</option>
+          <option value="existing">ربط حساب موجود</option>
+          <option value="new">إنشاء حساب ولي أمر جديد</option>
         </SelectField>
+        {parentMode === 'existing' && (
+          <SelectField label="حساب ولي الأمر" {...register('parentId')} error={errors.parentId?.message}>
+            <option value="">اختر ولي الأمر...</option>
+            {parents.map((parent) => <option key={parent._id} value={parent._id}>{fullName(parent.userId.name)} - {parent.nationalId}</option>)}
+          </SelectField>
+        )}
+        {parentMode === 'new' && <>
+          <Input label="اسم ولي الأمر" {...register('parentFirstName')} error={errors.parentFirstName?.message} />
+          <Input label="اسم العائلة" {...register('parentLastName')} error={errors.parentLastName?.message} />
+          <Input label="هوية ولي الأمر" {...register('parentNationalId')} error={errors.parentNationalId?.message} />
+          <Input label="جوال ولي الأمر" {...register('parentPhone')} error={errors.parentPhone?.message} />
+          <Input label="بريد ولي الأمر (اختياري)" type="email" {...register('parentEmail')} error={errors.parentEmail?.message} />
+        </>}
+        <SelectField label="كلمة المرور المؤقتة" {...register('passwordMode')}>
+          <option value="default">Student@ + آخر 4 أرقام من الهوية</option>
+          <option value="custom">تحديد كلمة مؤقتة مخصصة</option>
+        </SelectField>
+        {passwordMode === 'custom' && (
+          <Input label="الكلمة المؤقتة المخصصة" type="text" dir="ltr" {...register('temporaryPassword')} error={errors.temporaryPassword?.message} />
+        )}
         {errorMessage && (
           <AlertBanner variant="error" className="sm:col-span-2">
             {errorMessage}

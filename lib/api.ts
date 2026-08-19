@@ -156,18 +156,27 @@ export const authApi = {
   logout: () => api.post('/auth/logout'),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.patch('/auth/change-password', data),
-  resetPassword: (userId: string) => api.post(`/auth/reset-password/${userId}`),
+  resetPassword: (userId: string, temporaryPassword?: string) => api.post(`/auth/reset-password/${userId}`, { temporaryPassword }),
+  requestEmailReset: (data: { identifier: string; email: string }) => api.post('/auth/forgot-password/email', data),
+  completeEmailReset: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password/email', data),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
+  identifyStudentRecovery: (data: { nationalId: string; phone: string }) => api.post('/auth/student-recovery/identify', data),
+  submitStudentRecovery: (data: { requestId: string; challengeToken: string; grade: string; classId: string }) => api.post('/auth/student-recovery/requests', data),
+  completeStudentRecovery: (data: { requestId: string; otp: string; newPassword: string }) => api.post('/auth/student-recovery/complete', data),
+  listStudentRecoveryRequests: (params?: object) => api.get('/auth/student-recovery/requests', { params }),
+  issueStudentRecoveryCode: (id: string) => api.post(`/auth/student-recovery/requests/${id}/issue-code`),
   registerSchool: (data: {
+    inviteCode: string;
     schoolName: string;
     schoolNameAr?: string;
     address: string;
     phone: string;
-    email?: string;
+    email: string;
     admin: {
       name: { first: string; last: string };
       nationalId: string;
       phone: string;
-      email?: string;
+      email: string;
       password: string;
     };
   }) => api.post('/auth/register-school', data),
@@ -185,6 +194,7 @@ export const schoolsApi = {
   getById: (id: string) => api.get(`/schools/${id}`),
   create: (data: object) => api.post('/schools', data),
   update: (id: string, data: object) => api.patch(`/schools/${id}`, data),
+  updateStatus: (id: string, data: { status: 'active' | 'suspended'; reason?: string }) => api.patch(`/schools/${id}/status`, data),
   updateCurrentProfile: (data: object) => api.patch('/schools/profile', data),
   purgeCurrentData: (data: object) => api.post('/schools/purge', data),
   updateSettings: (id: string, data: object) => api.patch(`/schools/${id}/settings`, data),
@@ -220,6 +230,7 @@ export const parentsApi = {
 
 export const studentsApi = {
   list: (params?: object) => api.get('/students', { params }),
+  whatsappRecipients: (params?: object) => api.get('/students/whatsapp-recipients', { params }),
   export: (params?: object) => api.get('/students/export', {
     params,
     responseType: 'blob',
@@ -236,6 +247,12 @@ export const studentsApi = {
   },
   update: (id: string, data: object) => api.patch(`/students/${id}`, data),
   delete: (id: string) => api.delete(`/students/${id}`),
+};
+
+export const registrationInvitesApi = {
+  list: (params?: object) => api.get('/registration-invites', { params }),
+  create: (data: { label?: string; expiresInDays?: number }) => api.post('/registration-invites', data),
+  revoke: (id: string) => api.patch(`/registration-invites/${id}/revoke`),
 };
 
 export const classesApi = {
@@ -330,6 +347,8 @@ export const reportsApi = {
   }),
   grades: (params?: object) => api.get('/reports/grades', { params }),
   student: (params?: object) => api.get('/reports/student', { params }),
+  comprehensive: (params: { scopeType: 'student' | 'class' | 'teacher'; scopeId: string; startDate?: string; endDate?: string }) => api.get('/reports/comprehensive', { params }),
+  exportComprehensive: (params: { scopeType: 'student' | 'class' | 'teacher'; scopeId: string; startDate?: string; endDate?: string; format: 'csv' | 'pdf' | 'xlsx' }) => api.get('/reports/comprehensive/export', { params, responseType: 'blob' }),
   summary: () => api.get('/reports/summary'),
 };
 

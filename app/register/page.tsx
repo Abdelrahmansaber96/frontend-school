@@ -12,17 +12,18 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 const schema = z.object({
+  inviteCode: z.string().min(8, 'كود التسجيل مطلوب'),
   schoolName: z.string().min(2, 'اسم المدرسة مطلوب (حرفان على الأقل)'),
   schoolNameAr: z.string().optional(),
   address: z.string().min(5, 'العنوان مطلوب'),
   phone: z.string().min(7, 'رقم جوال المدرسة مطلوب'),
-  email: z.string().email('بريد إلكتروني غير صالح').optional().or(z.literal('')),
+  email: z.string().email('بريد إلكتروني غير صالح'),
   // Admin fields
   adminFirstName: z.string().min(2, 'الاسم الأول مطلوب'),
   adminLastName: z.string().min(2, 'اسم العائلة مطلوب'),
   adminNationalId: z.string().min(5, 'رقم الهوية مطلوب'),
   adminPhone: z.string().min(7, 'رقم الجوال مطلوب'),
-  adminEmail: z.string().email('بريد إلكتروني غير صالح').optional().or(z.literal('')),
+  adminEmail: z.string().email('بريد إلكتروني غير صالح'),
   adminPassword: z
     .string()
     .min(8, '8 أحرف على الأقل')
@@ -60,7 +61,7 @@ export default function RegisterPage() {
 
   const nextStep = async () => {
     if (step === 1) {
-      const valid = await trigger(['schoolName', 'address', 'phone', 'email']);
+      const valid = await trigger(['inviteCode', 'schoolName', 'address', 'phone', 'email']);
       if (valid) setStep(2);
     } else if (step === 2) {
       const valid = await trigger([
@@ -75,16 +76,17 @@ export default function RegisterPage() {
     setServerError('');
     try {
       const res = await authApi.registerSchool({
+        inviteCode: data.inviteCode,
         schoolName: data.schoolName,
         schoolNameAr: data.schoolNameAr || undefined,
         address: data.address,
         phone: data.phone,
-        email: data.email || undefined,
+        email: data.email,
         admin: {
           name: { first: data.adminFirstName, last: data.adminLastName },
           nationalId: data.adminNationalId,
           phone: data.adminPhone,
-          email: data.adminEmail || undefined,
+          email: data.adminEmail,
           password: data.adminPassword,
         },
       });
@@ -176,6 +178,12 @@ export default function RegisterPage() {
             {step === 1 && (
               <div className="space-y-4 animate-fade-in">
                 <Input
+                  label="كود تسجيل المدرسة"
+                  placeholder="أدخل الكود المرسل من إدارة المنصة"
+                  error={errors.inviteCode?.message}
+                  {...register('inviteCode')}
+                />
+                <Input
                   label="اسم المدرسة"
                   placeholder="مدرسة النور الابتدائية"
                   error={errors.schoolName?.message}
@@ -200,7 +208,7 @@ export default function RegisterPage() {
                     {...register('phone')}
                   />
                   <Input
-                    label="البريد الإلكتروني (اختياري)"
+                    label="البريد الإلكتروني للمدرسة"
                     type="email"
                     placeholder="info@school.com"
                     error={errors.email?.message}
@@ -241,7 +249,7 @@ export default function RegisterPage() {
                     {...register('adminPhone')}
                   />
                   <Input
-                    label="البريد الإلكتروني (اختياري)"
+                    label="بريد المدير لاستعادة الحساب"
                     type="email"
                     placeholder="admin@school.com"
                     error={errors.adminEmail?.message}

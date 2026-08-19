@@ -162,6 +162,8 @@ export default function StudentDetailsModal({
               lastLogin: student.userId.lastLogin,
             }}
             entityLabel="الطالب"
+            contactPhone={student.parentId?.userId?.phone || student.emergencyContacts?.[0]?.phone || student.userId.phone}
+            identifier={student.nationalId}
             invalidateQueryKeys={[['students'], ['accounts']]}
             onAccountUpdated={(updates) => {
               onStudentUpdate?.({

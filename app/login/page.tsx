@@ -117,6 +117,7 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" size="lg" loading={isSubmitting}>
               تسجيل الدخول
             </Button>
+            <Link href="/forgot-password" className="block text-center text-sm text-gold-600 hover:text-gold-500">نسيت كلمة المرور؟</Link>
           </form>
         </div>
 

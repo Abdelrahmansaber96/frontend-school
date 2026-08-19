@@ -355,6 +355,8 @@ export default function ParentsPage() {
                 lastLogin: selected.userId.lastLogin,
               }}
               entityLabel="ولي الأمر"
+              contactPhone={selected.userId.phone}
+              identifier={selected.nationalId}
               invalidateQueryKeys={[['parents'], ['accounts']]}
               onAccountUpdated={(updates) => {
                 setSelected((current) => {

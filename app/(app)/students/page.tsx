@@ -12,7 +12,6 @@ import Button from '@/components/ui/Button';
 import Table from '@/components/ui/Table';
 import type { Column } from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
-import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import AlertBanner from '@/components/ui/AlertBanner';
@@ -21,6 +20,7 @@ import StudentsFilters, { type StudentSortDirection } from '@/components/student
 import StudentCreateModal, { type StudentCreateFormValues } from '@/components/students/StudentCreateModal';
 import StudentEditModal, { type StudentEditFormValues } from '@/components/students/StudentEditModal';
 import StudentDetailsModal from '@/components/students/StudentDetailsModal';
+import StudentWhatsAppDialog from '@/components/students/StudentWhatsAppDialog';
 import { buildStudentPrintDocument } from '@/components/students/student-print';
 import {
   getApiErrorMessage,
@@ -34,7 +34,6 @@ import { useDisclosure } from '@/hooks/useDisclosure';
 import NewAccountWhatsAppNotice from '@/components/accounts/NewAccountWhatsAppNotice';
 import ImportedAccountsWhatsAppPanel, { type ImportedAccountWhatsAppItem } from '@/components/accounts/ImportedAccountsWhatsAppPanel';
 import { buildStudentAccountWhatsAppMessage } from '@/lib/whatsapp';
-import { buildStudentWelcomeWhatsAppMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import { useSchoolBrandingStore } from '@/store/branding.store';
 
 type StudentClassOption = {
@@ -49,10 +48,6 @@ type ParentOption = {
   userId: { name: { first: string; last: string }; phone: string };
   nationalId: string;
 };
-
-const getParentName = (parent: Student['parentId'] | null | undefined) => (
-  parent ? fullName(parent.userId.name) : '-'
-);
 
 const academicLevelBadgeStyles = {
   excellent: 'border-gold-400/30 bg-gold-400/10 text-gold-200',
@@ -101,8 +96,8 @@ export default function StudentsPage() {
   const [importSummary, setImportSummary] = useState<StudentImportResult['summary'] | null>(null);
   const [importedAccounts, setImportedAccounts] = useState<ImportedAccountWhatsAppItem[]>([]);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [whatsAppStudentId, setWhatsAppStudentId] = useState<string | null>(null);
   const [welcomeStudents, setWelcomeStudents] = useState<Student[]>([]);
-  const [selectedWelcomeStudents, setSelectedWelcomeStudents] = useState<string[]>([]);
   const [isLoadingWelcomeStudents, setIsLoadingWelcomeStudents] = useState(false);
   const { schoolNameAr, schoolName } = useSchoolBrandingStore();
   const [importRowErrors, setImportRowErrors] = useState<Array<{ row: number; message: string }>>([]);
@@ -233,30 +228,10 @@ export default function StudentsPage() {
     try {
       const response = await studentsApi.list({ page: 1, limit: 500, ...buildScopedStudentParams() }).then(getListPayload<Student>);
       setWelcomeStudents(response.items);
-      setSelectedWelcomeStudents(response.items.map((student) => student._id));
       setShowWelcomeDialog(true);
     } finally {
       setIsLoadingWelcomeStudents(false);
     }
-  };
-
-  const openWelcomeWhatsApp = (student: Student) => {
-    const url = buildWhatsAppUrl({
-      phone: student.parentId?.userId?.phone || student.userId.phone,
-      message: buildStudentWelcomeWhatsAppMessage({
-        studentName: fullName(student.userId.name),
-        grade: student.classId?.grade,
-        className: student.classId?.name,
-        schoolName: schoolNameAr || schoolName,
-      }),
-    });
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
-  const openSelectedWelcomeWhatsApp = () => {
-    welcomeStudents
-      .filter((student) => selectedWelcomeStudents.includes(student._id))
-      .forEach(openWelcomeWhatsApp);
   };
 
   const createMutation = useMutation({
@@ -267,16 +242,23 @@ export default function StudentsPage() {
         phone: values.phone,
         gender: values.gender,
         classId: values.classId,
-        parentId: values.parentId || undefined,
+        parentId: values.parentMode === 'existing' ? values.parentId : undefined,
+        newParent: values.parentMode === 'new' ? {
+          name: { first: values.parentFirstName, last: values.parentLastName },
+          nationalId: values.parentNationalId,
+          phone: values.parentPhone,
+          email: values.parentEmail || undefined,
+        } : undefined,
+        temporaryPassword: values.passwordMode === 'custom' ? values.temporaryPassword : undefined,
         dateOfBirth: values.dateOfBirth || undefined,
-      }).then(getEntityPayload<{ student: Student; tempPassword?: string | null }>),
+      }).then(getEntityPayload<{ student: Student; tempPassword?: string | null; parentTempPassword?: string | null }>),
     onMutate: () => { setCreateError(null); setCreatedAccount(null); },
     onSuccess: (response, values) => {
       if (response.tempPassword) {
         const parent = (parentsQuery.data?.items ?? []).find((item) => item._id === values.parentId);
         setCreatedAccount({
           tempPassword: response.tempPassword,
-          phone: parent?.userId.phone || values.phone,
+          phone: values.parentMode === 'new' ? values.parentPhone || values.phone : parent?.userId.phone || values.phone,
           message: buildStudentAccountWhatsAppMessage({
             studentName: `${values.firstName} ${values.lastName}`,
             nationalId: values.nationalId,
@@ -374,13 +356,13 @@ export default function StudentsPage() {
       key: 'name',
       header: 'الطالب',
       render: (s: Student) => (
-        <div className="flex items-center gap-3">
+        <button type="button" className="flex items-center gap-3 text-start" onClick={(event) => { event.stopPropagation(); setWhatsAppStudentId(s._id); }} title="التواصل مع ولي الأمر عبر واتساب">
           <Avatar name={s.userId.name} size="sm" />
           <div>
             <p className="font-medium text-gray-900">{fullName(s.userId.name)}</p>
             <p className="text-xs text-gray-500">{s.nationalId}</p>
           </div>
-        </div>
+        </button>
       ),
     },
     {
@@ -424,16 +406,6 @@ export default function StudentsPage() {
           {s.gender === 'male' ? 'ذكر' : s.gender === 'female' ? 'أنثى' : 'غير محدد'}
         </Badge>
       ),
-    },
-    {
-      key: 'parent',
-      header: 'ولي الأمر',
-      render: (s: Student) =>
-        s.parentId ? (
-          <span className="text-sm text-gray-700">{getParentName(s.parentId)}</span>
-        ) : (
-          <span className="text-xs text-gray-400">-</span>
-        ),
     },
     {
       key: 'dob',
@@ -612,45 +584,20 @@ export default function StudentsPage() {
         errorMessage={createError}
       />
 
-      <Modal
+      <StudentWhatsAppDialog
         open={showWelcomeDialog}
         onClose={() => setShowWelcomeDialog(false)}
-        title="رسالة ترحيبية للطلاب"
-        size="lg"
-        footer={(
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => setShowWelcomeDialog(false)}>إلغاء</Button>
-            <Button variant="secondary" onClick={() => setSelectedWelcomeStudents(welcomeStudents.map((student) => student._id))}>اختيار الكل</Button>
-            <Button disabled={!selectedWelcomeStudents.length} onClick={openSelectedWelcomeWhatsApp}>
-              <MessageCircle className="h-4 w-4" /> فتح واتساب للمحددين ({selectedWelcomeStudents.length})
-            </Button>
-          </div>
-        )}
-      >
-        <div className="space-y-3">
-          <p className="text-sm text-ink-dim">تُرسل رسالة مخصّصة باسم الطالب وصفه وفصله إلى ولي الأمر، أو إلى رقم الطالب عند عدم وجود ولي أمر. قد يطلب المتصفح السماح بفتح عدة نوافذ واتساب.</p>
-          <div className="max-h-72 divide-y overflow-y-auto rounded-lg border border-stroke">
-            {welcomeStudents.map((student) => (
-              <label key={student._id} className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-glaze/[0.05]">
-                <input
-                  type="checkbox"
-                  checked={selectedWelcomeStudents.includes(student._id)}
-                  onChange={() => setSelectedWelcomeStudents((current) => current.includes(student._id)
-                    ? current.filter((id) => id !== student._id)
-                    : [...current, student._id])}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{fullName(student.userId.name)}</span>
-                  <span className="text-xs text-ink-faint">الصف {student.classId?.grade || 'غير محدد'} — {student.classId?.name || 'بدون فصل'}</span>
-                </span>
-                <Button type="button" size="sm" variant="ghost" onClick={() => openWelcomeWhatsApp(student)}>
-                  <MessageCircle className="h-4 w-4" /> واتساب
-                </Button>
-              </label>
-            ))}
-          </div>
-        </div>
-      </Modal>
+        students={welcomeStudents}
+        schoolName={schoolNameAr || schoolName}
+      />
+
+      <StudentWhatsAppDialog
+        open={Boolean(whatsAppStudentId)}
+        onClose={() => setWhatsAppStudentId(null)}
+        students={sortedStudents}
+        singleStudentId={whatsAppStudentId}
+        schoolName={schoolNameAr || schoolName}
+      />
 
       <StudentDetailsModal
         student={selected}

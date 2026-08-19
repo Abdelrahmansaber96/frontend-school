@@ -63,12 +63,13 @@ const createSchema = z.object({
   nameAr: optionalNameField,
   address: requiredAddressField,
   phone: requiredPhoneField,
-  email: optionalEmailField,
+  email: z.string().trim().email('بريد المدرسة مطلوب وصحيح'),
   academicYear: academicYearField,
   adminFirstName: z.string().trim().min(1, 'Required').max(50, 'Max 50 characters'),
   adminLastName: z.string().trim().min(1, 'Required').max(50, 'Max 50 characters'),
   adminNationalId: z.string().trim().min(5, 'Min 5 chars').max(20, 'Max 20 chars'),
   adminPhone: requiredPhoneField,
+  adminEmail: z.string().trim().email('بريد مدير المدرسة مطلوب وصحيح'),
   ...operationalSchema,
 });
 
@@ -112,6 +113,7 @@ const createDefaultValues: CreateForm = {
   adminLastName: '',
   adminNationalId: '',
   adminPhone: '',
+  adminEmail: '',
   ...emptyOperationalValues,
 };
 
@@ -333,6 +335,7 @@ export default function SchoolsPage() {
           name: { first: values.adminFirstName.trim(), last: values.adminLastName.trim() },
           nationalId: values.adminNationalId.trim(),
           phone: values.adminPhone.trim(),
+          email: values.adminEmail.trim(),
         },
       }).then(getEntityPayload<{ school: School; tempPassword?: string | null }>),
     onMutate: () => {
@@ -372,6 +375,24 @@ export default function SchoolsPage() {
     },
     onError: (error) => {
       setUpdateError(getApiErrorMessage(error, 'تعذر تحديث بيانات المدرسة.'));
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async (school: School) => {
+      const isSuspended = school.status === 'suspended' || school.isActive === false;
+      const reason = isSuspended ? undefined : window.prompt('سبب إيقاف المدرسة (مثال: عدم سداد الاشتراك):', 'عدم سداد الاشتراك');
+      if (!isSuspended && !reason) throw new Error('تم إلغاء الإيقاف');
+      return schoolsApi.updateStatus(school._id, { status: isSuspended ? 'active' : 'suspended', reason: reason || undefined }).then(getEntityPayload<School>);
+    },
+    onSuccess: (school) => {
+      setSelected(school);
+      setPageSuccess(school.status === 'suspended' ? `تم إيقاف مدرسة ${school.name}.` : `تمت إعادة تفعيل مدرسة ${school.name}.`);
+      void qc.invalidateQueries({ queryKey: ['schools'] });
+    },
+    onError: (error) => {
+      if (error instanceof Error && error.message === 'تم إلغاء الإيقاف') return;
+      setUpdateError(getApiErrorMessage(error, 'تعذر تغيير حالة المدرسة.'));
     },
   });
 
@@ -446,8 +467,8 @@ export default function SchoolsPage() {
       key: 'status',
       header: 'الحالة',
       render: (school) => (
-        <Badge variant={school.isActive ? 'success' : 'danger'}>
-          {school.isActive ? 'نشط' : 'غير نشط'}
+        <Badge variant={school.status === 'suspended' || !school.isActive ? 'danger' : 'success'}>
+          {school.status === 'suspended' || !school.isActive ? 'موقوف' : 'نشط'}
         </Badge>
       ),
     },
@@ -591,6 +612,7 @@ export default function SchoolsPage() {
               <Input label="اسم العائلة" {...registerCreate('adminLastName')} error={createErrors.adminLastName?.message} />
               <Input label="رقم الهوية" {...registerCreate('adminNationalId')} error={createErrors.adminNationalId?.message} />
               <Input label="رقم جوال الحساب" {...registerCreate('adminPhone')} error={createErrors.adminPhone?.message} />
+              <Input label="البريد الإلكتروني لمدير المدرسة" type="email" {...registerCreate('adminEmail')} error={createErrors.adminEmail?.message} />
             </div>
           </div>
 
@@ -607,6 +629,9 @@ export default function SchoolsPage() {
           selected ? (
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setSelected(null)}>إغلاق</Button>
+              <Button variant={selected.status === 'suspended' || !selected.isActive ? 'secondary' : 'danger'} loading={statusMutation.isPending} onClick={() => statusMutation.mutate(selected)}>
+                {selected.status === 'suspended' || !selected.isActive ? 'إعادة تفعيل المدرسة' : 'إيقاف المدرسة'}
+              </Button>
               <Button onClick={openEditModal}>
                 <PencilLine className="h-4 w-4 me-1" /> تحرير البيانات
               </Button>
@@ -624,12 +649,16 @@ export default function SchoolsPage() {
                 <h3 className="text-lg font-semibold text-gray-900">{selected.name}</h3>
                 {selected.nameAr && <p className="text-sm text-gray-500">{selected.nameAr}</p>}
                 <div className="mt-1 flex items-center gap-2">
-                  <Badge variant={selected.isActive ? 'success' : 'danger'}>
-                    {selected.isActive ? 'نشط' : 'غير نشط'}
+                  <Badge variant={selected.status === 'suspended' || !selected.isActive ? 'danger' : 'success'}>
+                    {selected.status === 'suspended' || !selected.isActive ? 'موقوف' : 'نشط'}
                   </Badge>
                 </div>
               </div>
             </div>
+
+            {selected.status === 'suspended' && selected.suspensionReason && (
+              <AlertBanner variant="warning">سبب الإيقاف: {selected.suspensionReason}</AlertBanner>
+            )}
 
             <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-4 text-sm">
               <div className="col-span-2">

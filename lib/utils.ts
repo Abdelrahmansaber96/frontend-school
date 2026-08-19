@@ -19,17 +19,19 @@ export function fullName(name?: { first: string; last: string } | null): string 
 
 export function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '—';
+  const gregorian = new Intl.DateTimeFormat('ar-EG-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+  const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+  return `${gregorian} م — ${hijri} هـ`;
 }
 
 export function formatDateTime(dateStr?: string | null): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '—';
+  const time = new Intl.DateTimeFormat('ar-EG', { hour: '2-digit', minute: '2-digit' }).format(date);
+  return `${formatDate(dateStr)}، ${time}`;
 }
 
 export function formatFileSize(size?: number | null): string {
@@ -51,12 +53,12 @@ export function formatFileSize(size?: number | null): string {
 export function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return 'الآن';
+  if (mins < 60) return `منذ ${mins} دقيقة`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `منذ ${hours} ساعة`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `منذ ${days} يوم`;
 }
 
 export function getInitials(name?: { first: string; last: string } | null): string {

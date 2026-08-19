@@ -530,6 +530,8 @@ export default function TeachersPage() {
                 lastLogin: selected.userId.lastLogin,
               }}
               entityLabel="المعلم"
+              contactPhone={selected.userId.phone}
+              identifier={selected.nationalId}
               invalidateQueryKeys={[['teachers'], ['accounts']]}
               onAccountUpdated={(updates) => {
                 setSelected((current) => {

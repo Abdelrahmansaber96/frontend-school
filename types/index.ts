@@ -102,6 +102,9 @@ export interface School {
   academicYear: string;
   administration?: SchoolAdministration;
   isActive: boolean;
+  status?: 'active' | 'suspended';
+  suspensionReason?: string | null;
+  suspendedAt?: string | null;
   createdAt: string;
 }
 

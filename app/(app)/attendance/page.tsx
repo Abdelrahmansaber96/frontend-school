@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Filter, MessageCircle } from 'lucide-react';
-import { attendanceApi, classesApi, studentsApi } from '@/lib/api';
+import { attendanceApi, classesApi, studentsApi, teachersApi } from '@/lib/api';
 import { AttendanceRecord, Student } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { useSchoolBrandingStore } from '@/store/branding.store';
@@ -53,24 +53,31 @@ export default function AttendancePage() {
   const [page, setPage] = useState(1);
   const [filterDate, setFilterDate] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterGrade, setFilterGrade] = useState('');
+  const [filterStudent, setFilterStudent] = useState('');
+  const [filterTeacher, setFilterTeacher] = useState('');
   const [showSingle, setShowSingle] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [bulkStudents, setBulkStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['attendance', page, filterDate, filterType],
+    queryKey: ['attendance', page, filterDate, filterType, filterClass, filterGrade, filterStudent, filterTeacher],
     queryFn: () =>
       attendanceApi
-        .list({ page, limit: 15, date: filterDate || undefined, type: filterType || undefined })
+        .list({ page, limit: 15, date: filterDate || undefined, type: filterType || undefined, classId: filterClass || undefined, grade: filterGrade || undefined, studentId: filterStudent || undefined, teacherId: filterTeacher || undefined })
         .then((r) => r.data),
     staleTime: 15_000,
   });
 
+  const { data: filterStudentsData } = useQuery({ queryKey: ['attendance-filter-students', filterClass, filterGrade], queryFn: () => studentsApi.list({ page: 1, limit: 500, classId: filterClass || undefined, grade: filterGrade || undefined }).then((r) => r.data), staleTime: 60_000 });
+  const { data: filterTeachersData } = useQuery({ queryKey: ['attendance-filter-teachers'], queryFn: () => teachersApi.list({ page: 1, limit: 500 }).then((r) => r.data), enabled: user?.role === 'school_admin', staleTime: 60_000 });
+
   const { data: classesData } = useQuery({
     queryKey: ['classes-select'],
     queryFn: () => classesApi.list({ page: 1, limit: 100 }).then((r) => r.data),
-    enabled: showSingle || showBulk,
+    enabled: true,
   });
 
   const singleForm = useForm<SingleForm>({
@@ -268,8 +275,15 @@ export default function AttendancePage() {
           <option value="late">تأخر</option>
           <option value="permission">إذن</option>
         </select>
-        {(filterDate || filterType) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterDate(''); setFilterType(''); setPage(1); }}>
+        <select value={filterClass} onChange={(e) => { setFilterClass(e.target.value); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          <option value="">جميع الفصول</option>
+          {(classesData?.data ?? []).map((item: { _id: string; name: string; grade: string }) => <option key={item._id} value={item._id}>{item.name} — صف {item.grade}</option>)}
+        </select>
+        <select value={filterGrade} onChange={(e) => { setFilterGrade(e.target.value); setFilterClass(''); setFilterStudent(''); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع الصفوف</option>{Array.from(new Set((classesData?.data ?? []).map((item: { grade: string }) => item.grade))).map((grade) => <option key={String(grade)} value={String(grade)}>{String(grade)}</option>)}</select>
+        <select value={filterStudent} onChange={(e) => { setFilterStudent(e.target.value); setPage(1); }} className="max-w-52 rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع الطلاب</option>{(filterStudentsData?.data ?? []).map((item: Student) => <option key={item._id} value={item._id}>{fullName(item.userId.name)}</option>)}</select>
+        {user?.role === 'school_admin' && <select value={filterTeacher} onChange={(e) => { setFilterTeacher(e.target.value); setPage(1); }} className="max-w-52 rounded-lg border border-gray-300 px-3 py-2 text-sm"><option value="">جميع المعلمين</option>{(filterTeachersData?.data ?? []).map((item: { _id: string; userId: { name: { first: string; last: string } } }) => <option key={item._id} value={item._id}>{fullName(item.userId.name)}</option>)}</select>}
+        {(filterDate || filterType || filterClass || filterGrade || filterStudent || filterTeacher) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterDate(''); setFilterType(''); setFilterClass(''); setFilterGrade(''); setFilterStudent(''); setFilterTeacher(''); setPage(1); }}>
             مسح
           </Button>
         )}
