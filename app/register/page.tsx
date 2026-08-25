@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { School, ArrowLeft, CheckCircle2, User, Building2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, User, Building2 } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 const schema = z.object({
   inviteCode: z.string().min(8, 'كود التسجيل مطلوب'),
@@ -131,7 +132,7 @@ export default function RegisterPage() {
   return (
     <div className="relative flex min-h-screen items-start justify-center overflow-x-hidden overflow-y-auto bg-[var(--background)] p-4 py-8 sm:items-center">
       {/* Background ambient glow */}
-      <div className="pointer-events-none absolute top-[-20%] start-[10%] h-[500px] w-[500px] rounded-full bg-gold-500/[0.04] blur-[100px]" />
+      <div className="pointer-events-none absolute top-[-20%] start-[10%] h-[500px] w-[500px] rounded-full bg-brand-500/[0.06] blur-[100px]" />
       <div className="pointer-events-none absolute bottom-[-10%] end-[10%] h-[400px] w-[400px] rounded-full bg-blue-500/[0.03] blur-[100px]" />
 
       <div className="relative w-full max-w-[560px] animate-fade-in-up">
@@ -139,10 +140,7 @@ export default function RegisterPage() {
         <div className="glass-shine rounded-2xl border border-stroke bg-white/80 dark:bg-glaze/[0.03] backdrop-blur-2xl p-8 shadow-[0_16px_64px_rgba(0,0,0,0.2)]">
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center text-center">
-            <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 gold-glow-strong">
-              <School className="h-7 w-7 text-navy-950" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/20 to-transparent" />
-            </div>
+            <BrandLogo variant="mark" size="lg" className="mb-4" />
             <h1 className="text-[22px] font-bold tracking-tight text-ink">تسجيل مدرسة جديدة</h1>
             <p className="mt-1.5 text-[13px] text-ink-dim">أنشئ حسابك المدرسي وابدأ إدارة مدرستك</p>
           </div>
@@ -157,7 +155,7 @@ export default function RegisterPage() {
                 <div key={s.id} className="flex flex-1 items-center gap-2">
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${
                     isDone ? 'bg-emerald-500/15 text-emerald-500' :
-                    isActive ? 'bg-gold-500/15 text-gold-500' :
+                    isActive ? 'bg-brand-500/15 text-brand-600' :
                     'bg-glaze/[0.06] text-ink-faint'
                   }`}>
                     {isDone ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
@@ -279,7 +277,7 @@ export default function RegisterPage() {
               <div className="space-y-4 animate-fade-in">
                 <div className="rounded-xl border border-stroke bg-glaze/[0.03] p-4 space-y-3">
                   <h4 className="text-[13px] font-semibold text-ink flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-gold-500" />
+                    <Building2 className="h-4 w-4 text-brand-600" />
                     بيانات المدرسة
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-[13px]">
@@ -292,7 +290,7 @@ export default function RegisterPage() {
 
                 <div className="rounded-xl border border-stroke bg-glaze/[0.03] p-4 space-y-3">
                   <h4 className="text-[13px] font-semibold text-ink flex items-center gap-2">
-                    <User className="h-4 w-4 text-gold-500" />
+                    <User className="h-4 w-4 text-brand-600" />
                     حساب المدير
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-[13px]">
@@ -333,7 +331,7 @@ export default function RegisterPage() {
           {/* Link to login */}
           <div className="mt-6 text-center">
             <Link href="/login" className="text-[13px] text-ink-dim hover:text-ink transition-colors duration-200">
-              لديك حساب بالفعل؟ <span className="text-gold-500 font-semibold">تسجيل الدخول</span>
+              لديك حساب بالفعل؟ <span className="text-brand-600 font-semibold">تسجيل الدخول</span>
             </Link>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { GraduationCap } from 'lucide-react';
 import Link from 'next/link';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 const footerLinks = {
   المنصة: [
@@ -29,10 +30,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
+              <BrandLogo variant="wordmark" size="sm" className="[&>span>span:first-child]:text-white [&>span>span:last-child]:text-emerald-100" />
+              <div className="hidden w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-white">
+              <span className="hidden text-lg font-bold text-white">
                 بصمة
               </span>
             </Link>
@@ -51,7 +53,7 @@ export default function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-white/40 hover:text-gold-400 transition-colors duration-200"
+                      className="text-sm text-white/40 hover:text-emerald-300 transition-colors duration-200"
                     >
                       {link.label}
                     </a>

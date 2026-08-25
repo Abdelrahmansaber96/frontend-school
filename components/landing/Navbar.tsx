@@ -8,6 +8,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 const links = [
   { label: 'المميزات', href: '#features' },
@@ -24,10 +25,11 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
+          <BrandLogo variant="wordmark" size="sm" className="[&>span>span:first-child]:text-white [&>span>span:last-child]:text-emerald-100" />
+          <div className="hidden w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
-          <span className="text-lg font-bold text-white">
+          <span className="hidden text-lg font-bold text-white">
             بصمة
           </span>
         </Link>
@@ -38,7 +40,7 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm text-white/60 hover:text-gold-400 transition-colors duration-200"
+              className="text-sm text-white/60 hover:text-emerald-300 transition-colors duration-200"
             >
               {link.label}
             </a>
@@ -55,7 +57,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/register"
-            className="text-sm font-semibold bg-gradient-to-r from-gold-500 to-gold-400 text-[#020617] px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-gold-500/25 transition-all duration-300"
+            className="text-sm font-semibold bg-gradient-to-r from-brand-700 to-brand-500 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-500/25 transition-all duration-300"
           >
             ابدأ مجانًا
           </Link>
@@ -86,7 +88,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="block text-sm text-white/60 hover:text-gold-400 py-2 transition-colors"
+                  className="block text-sm text-white/60 hover:text-emerald-300 py-2 transition-colors"
                 >
                   {link.label}
                 </a>
@@ -100,7 +102,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="block text-center text-sm font-semibold bg-gradient-to-r from-gold-500 to-gold-400 text-[#020617] px-5 py-2.5 rounded-xl"
+                  className="block text-center text-sm font-semibold bg-gradient-to-r from-brand-700 to-brand-500 text-white px-5 py-2.5 rounded-xl"
                 >
                   ابدأ مجانًا
                 </Link>

@@ -24,6 +24,15 @@ const config: Config = {
           500: "#C8A24D",
           600: "#A47E1B",
         },
+        brand: {
+          50: '#E9F4EF',
+          100: '#D3E9DF',
+          300: '#74B6A0',
+          500: '#14866D',
+          600: '#0B5D4B',
+          700: '#084638',
+          navy: '#123B5D',
+        },
         /* ── Semantic theme tokens ── */
         ink: {
           DEFAULT: 'var(--ink)',

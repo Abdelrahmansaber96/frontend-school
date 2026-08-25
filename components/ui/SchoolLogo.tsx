@@ -41,7 +41,7 @@ export default function SchoolLogo({
     );
   }
 
-  const primaryColor = branding?.primaryColor || '#C8A24D';
+  const primaryColor = branding?.primaryColor || '#0B5D4B';
 
   return (
     <div

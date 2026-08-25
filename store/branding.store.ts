@@ -19,8 +19,8 @@ interface SchoolBrandingStore {
 }
 
 const DEFAULT_BRANDING: SchoolBranding = {
-  primaryColor: '#C8A24D',
-  secondaryColor: '#0a0e1a',
+  primaryColor: '#0B5D4B',
+  secondaryColor: '#123B5D',
   accentColor: null,
   logoUrl: null,
   faviconUrl: null,

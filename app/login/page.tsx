@@ -14,6 +14,7 @@ import { extractAccessToken, extractAccessTokenFromHeaders } from '@/lib/auth-se
 import { useAuthStore } from '@/store/auth.store';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import LoginExperience from '@/components/auth/LoginExperience';
 
 const schema = z.object({
   identifier: z.string().min(1, 'Required'),
@@ -22,7 +23,7 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-export default function LoginPage() {
+function LegacyLoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [serverError, setServerError] = useState('');
@@ -133,3 +134,9 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return <LoginExperience />;
+}
+
+void LegacyLoginPage;

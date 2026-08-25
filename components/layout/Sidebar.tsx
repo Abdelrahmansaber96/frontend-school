@@ -13,6 +13,7 @@ import { useSchoolBrandingStore } from '@/store/branding.store';
 import { Role } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import SchoolLogo from '@/components/ui/SchoolLogo';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 interface NavItem {
   label: string;
@@ -55,8 +56,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   const visibleNavItems = navItems.filter((item) => hasAnyRole(role, item.roles));
 
-  const displayName = schoolNameAr || schoolName || 'بصمة';
-  const displaySub = schoolName && schoolNameAr ? schoolName : 'نظام إدارة مدرسي';
+  const isPlatformAdmin = role === 'super_admin';
+  const displayName = isPlatformAdmin ? 'منصة بصمة التعليمية' : schoolNameAr || schoolName || 'بصمة';
+  const displaySub = isPlatformAdmin ? 'إدارة المنصة والاشتراكات' : schoolName && schoolNameAr ? schoolName : 'نظام إدارة مدرسي';
   const schoolLogoSrc = logo || branding.logoUrl || null;
 
   const content = (
@@ -67,13 +69,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5 dark:border-white/10 lg:h-20">
         <div className="flex items-center gap-3">
-          <SchoolLogo
-            alt={displayName}
-            src={schoolLogoSrc}
-            branding={branding}
-            size="sm"
-            className={schoolLogoSrc ? undefined : 'gold-glow'}
-          />
+          {isPlatformAdmin ? <BrandLogo variant="adminShield" size="sm" /> : <SchoolLogo alt={displayName} src={schoolLogoSrc} branding={branding} size="sm" />}
           <div>
             <span className="text-base font-bold text-ink tracking-tight">{displayName}</span>
             <span className="block text-[10px] font-medium text-ink-faint -mt-0.5">{displaySub}</span>
@@ -103,11 +99,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               className={cn(
                 'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 animate-fade-in',
                 active
-                  ? 'bg-gradient-to-l from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/15'
-                  : 'text-ink-dim hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:text-violet-300',
+                  ? 'bg-gradient-to-l from-brand-700 to-brand-500 text-white shadow-lg shadow-brand-500/15'
+                  : 'text-ink-dim hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-500/10 dark:hover:text-brand-300',
               )}
             >
-              <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-white' : 'text-ink-faint group-hover:text-violet-600 dark:group-hover:text-violet-300')} />
+              <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-white' : 'text-ink-faint group-hover:text-brand-600 dark:group-hover:text-brand-300')} />
               <span className="flex-1">{teacherLabel || studentLabel || item.label}</span>
               {active && <ChevronRight className="h-3 w-3 text-white/70 me-auto rtl:rotate-180" />}
             </Link>

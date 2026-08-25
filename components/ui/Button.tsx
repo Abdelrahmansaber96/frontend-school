@@ -9,7 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 text-navy-950 font-semibold hover:shadow-[0_0_24px_rgba(200,162,77,0.25)] active:scale-[0.98] focus-visible:ring-gold-500/50',
+  primary: 'bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 text-white font-semibold hover:shadow-[0_0_24px_rgba(11,93,75,0.25)] active:scale-[0.98] focus-visible:ring-brand-500/50',
   secondary: 'bg-glaze/[0.06] text-ink-muted border border-stroke hover:bg-glaze/[0.10] hover:text-ink hover:border-stroke-strong focus-visible:ring-stroke-strong',
   danger: 'bg-red-500/20 text-red-600 dark:text-red-300 border border-red-500/20 hover:bg-red-500/30 active:scale-[0.98] focus-visible:ring-red-500/30',
   ghost: 'bg-transparent text-ink-dim hover:bg-glaze/[0.06] hover:text-ink focus-visible:ring-stroke-strong',

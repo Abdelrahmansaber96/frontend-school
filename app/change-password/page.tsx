@@ -51,13 +51,13 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="relative flex min-h-screen items-start justify-center overflow-x-hidden overflow-y-auto bg-[var(--background)] p-4 py-8 sm:items-center">
-      <div className="pointer-events-none absolute top-[-20%] start-[10%] h-[420px] w-[420px] rounded-full bg-gold-500/[0.04] blur-[100px]" />
+      <div className="pointer-events-none absolute top-[-20%] start-[10%] h-[420px] w-[420px] rounded-full bg-brand-500/[0.06] blur-[100px]" />
       <div className="pointer-events-none absolute bottom-[-10%] end-[10%] h-[320px] w-[320px] rounded-full bg-blue-500/[0.03] blur-[100px]" />
 
       <div className="glass-shine relative w-full max-w-md rounded-2xl border border-stroke bg-white/80 p-8 shadow-[0_16px_64px_rgba(0,0,0,0.2)] backdrop-blur-2xl dark:bg-glaze/[0.03]">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/15">
-            <Lock className="h-6 w-6 text-gold-500" />
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500/15">
+            <Lock className="h-6 w-6 text-brand-600" />
           </div>
           <h1 className="text-xl font-bold text-ink">تغيير كلمة المرور</h1>
           {user?.mustChangePassword && (

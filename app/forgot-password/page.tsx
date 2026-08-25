@@ -53,8 +53,8 @@ export default function ForgotPasswordPage() {
     <div className="w-full max-w-lg rounded-2xl border border-stroke bg-white/90 p-5 shadow-xl dark:bg-navy-900 sm:p-8">
       <h1 className="text-xl font-bold text-ink">استعادة كلمة المرور</h1>
       <div className="my-5 flex rounded-xl border border-stroke p-1">
-        <button className={`flex-1 rounded-lg py-2 text-sm ${mode === 'student' ? 'bg-gold-500 text-navy-950' : 'text-ink-dim'}`} onClick={() => { setMode('student'); setMessage(null); setError(null); }}>حساب طالب</button>
-        <button className={`flex-1 rounded-lg py-2 text-sm ${mode === 'admin' ? 'bg-gold-500 text-navy-950' : 'text-ink-dim'}`} onClick={() => { setMode('admin'); setMessage(null); setError(null); }}>مدير مدرسة</button>
+        <button className={`flex-1 rounded-lg py-2 text-sm ${mode === 'student' ? 'bg-brand-600 text-white' : 'text-ink-dim'}`} onClick={() => { setMode('student'); setMessage(null); setError(null); }}>حساب طالب</button>
+        <button className={`flex-1 rounded-lg py-2 text-sm ${mode === 'admin' ? 'bg-brand-600 text-white' : 'text-ink-dim'}`} onClick={() => { setMode('admin'); setMessage(null); setError(null); }}>مدير مدرسة</button>
       </div>
       <div className="space-y-4">
         {mode === 'admin' ? <>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
         </>}
         {message && <AlertBanner variant="success">{message}</AlertBanner>}
         {error && <AlertBanner variant="error">{error}</AlertBanner>}
-        <Link href="/login" className="block text-center text-sm text-gold-600">العودة لتسجيل الدخول</Link>
+        <Link href="/login" className="block text-center text-sm text-brand-600">العودة لتسجيل الدخول</Link>
       </div>
     </div>
   </main>;
