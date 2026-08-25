@@ -1,6 +1,5 @@
 'use client';
 
-import { GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/ui/BrandLogo';
 
@@ -24,19 +23,13 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06] bg-[#020617]">
+    <footer className="relative border-t border-white/10 bg-[#071F24]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
               <BrandLogo variant="wordmark" size="sm" className="[&>span>span:first-child]:text-white [&>span>span:last-child]:text-emerald-100" />
-              <div className="hidden w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
-                <GraduationCap className="w-5 h-5 text-white" />
-              </div>
-              <span className="hidden text-lg font-bold text-white">
-                بصمة
-              </span>
             </Link>
             <p className="text-sm text-white/40 leading-relaxed max-w-sm">
               منصة بصمة التعليمية — نظام إدارة مدرسي متكامل يربط بين الإدارة والمعلمين وأولياء

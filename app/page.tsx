@@ -14,7 +14,7 @@ import {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#020617] overflow-x-hidden">
+    <main className="min-h-screen overflow-x-hidden bg-[#F7FAF8] text-[#123B5D] dark:bg-[#071F24]">
       <Navbar />
       <Hero />
       <Features />

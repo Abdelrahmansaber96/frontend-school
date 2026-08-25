@@ -43,14 +43,14 @@ export default function WhyBasma() {
             <motion.div
               whileHover={{ scale: 1.03 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="flex gap-4 p-6 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-gold-500/20 transition-colors duration-300"
+              className="flex gap-4 rounded-2xl border border-[#0B5D4B]/10 bg-white/90 p-6 shadow-[0_12px_34px_rgba(18,59,93,0.07)] backdrop-blur-xl transition-colors duration-300 hover:border-[#14866D]/30 dark:border-white/10 dark:bg-white/5"
             >
-              <div className="shrink-0 w-12 h-12 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center">
-                <reason.icon className="w-6 h-6 text-gold-400" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#0B5D4B]/15 bg-[#E9F4EF] dark:bg-[#14866D]/15">
+                <reason.icon className="h-6 w-6 text-[#0B5D4B] dark:text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">{reason.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{reason.description}</p>
+                <h3 className="mb-1 text-lg font-bold text-[#123B5D] dark:text-white">{reason.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-300">{reason.description}</p>
               </div>
             </motion.div>
           </FadeInUp>

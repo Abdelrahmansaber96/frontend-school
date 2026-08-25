@@ -43,7 +43,7 @@ export default function HowItWorks() {
 
       <div className="relative">
         {/* Connector line */}
-        <div className="hidden lg:block absolute top-1/2 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold-500/30 to-transparent -translate-y-1/2" />
+        <div className="absolute inset-x-0 top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-[#14866D]/30 to-transparent lg:block" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, i) => (
@@ -52,18 +52,18 @@ export default function HowItWorks() {
                 {/* Step number */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="relative mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-500/20 to-gold-600/10 border border-gold-500/20 flex items-center justify-center mb-6"
+                  className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[#0B5D4B]/15 bg-gradient-to-br from-[#E9F4EF] to-white shadow-sm dark:from-[#14866D]/20 dark:to-white/5"
                 >
-                  <span className="text-2xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-[#0B5D4B] to-[#14866D] bg-clip-text text-2xl font-black text-transparent">
                     {step.step}
                   </span>
-                  <div className="absolute -top-2 -left-2 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
+                  <div className="absolute -left-2 -top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#0B5D4B] to-[#14866D] shadow-lg shadow-[#0B5D4B]/20">
                     <step.icon className="w-4 h-4 text-white" />
                   </div>
                 </motion.div>
 
-                <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{step.description}</p>
+                <h3 className="mb-2 text-lg font-bold text-[#123B5D] dark:text-white">{step.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-300">{step.description}</p>
               </div>
             </FadeInUp>
           ))}

@@ -10,7 +10,7 @@ interface SectionProps {
 
 export default function Section({ children, className = '', id }: SectionProps) {
   return (
-    <section id={id} className={`relative py-20 md:py-28 px-4 sm:px-6 lg:px-8 ${className}`}>
+    <section id={id} className={`relative px-4 py-20 sm:px-6 md:py-24 lg:px-8 ${className}`}>
       <div className="mx-auto max-w-7xl">{children}</div>
     </section>
   );
@@ -25,11 +25,11 @@ export function SectionTitle({
 }) {
   return (
     <div className="text-center mb-16">
-      <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">{children}</h2>
+      <h2 className="mb-4 text-3xl font-black text-[#123B5D] dark:text-white md:text-4xl lg:text-5xl">{children}</h2>
       {subtitle && (
-        <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto">{subtitle}</p>
+        <p className="mx-auto max-w-2xl text-base leading-8 text-slate-500 dark:text-slate-300 md:text-lg">{subtitle}</p>
       )}
-      <div className="mt-6 mx-auto w-24 h-1 rounded-full bg-gradient-to-r from-gold-500 to-gold-400" />
+      <div className="mx-auto mt-6 h-1 w-24 rounded-full bg-gradient-to-r from-[#0B5D4B] via-[#14866D] to-[#B89647]" />
     </div>
   );
 }

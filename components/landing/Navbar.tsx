@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import {
-  GraduationCap,
-  Menu,
-  X,
-} from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import BrandLogo from '@/components/ui/BrandLogo';
 
 const links = [
@@ -21,17 +17,11 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 bg-[#020617]/70 backdrop-blur-xl border-b border-white/[0.06]">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-[#0B5D4B]/10 bg-white/90 shadow-sm backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#071F24]/90">
       <div className="mx-auto max-w-7xl flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <BrandLogo variant="wordmark" size="sm" className="[&>span>span:first-child]:text-white [&>span>span:last-child]:text-emerald-100" />
-          <div className="hidden w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <span className="hidden text-lg font-bold text-white">
-            بصمة
-          </span>
+          <BrandLogo variant="wordmark" size="sm" className="dark:[&>span>span:first-child]:text-white dark:[&>span>span:last-child]:text-emerald-100" />
         </Link>
 
         {/* Desktop links */}
@@ -40,7 +30,7 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm text-white/60 hover:text-emerald-300 transition-colors duration-200"
+              className="text-sm font-semibold text-[#123B5D]/70 transition-colors duration-200 hover:text-[#0B5D4B] dark:text-white/65 dark:hover:text-emerald-300"
             >
               {link.label}
             </a>
@@ -51,7 +41,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <Link
             href="/login"
-            className="text-sm text-white/70 hover:text-white transition-colors px-4 py-2"
+            className="px-4 py-2 text-sm font-semibold text-[#123B5D] transition-colors hover:text-[#0B5D4B] dark:text-white/80 dark:hover:text-white"
           >
             تسجيل الدخول
           </Link>
@@ -59,15 +49,15 @@ export default function Navbar() {
             href="/register"
             className="text-sm font-semibold bg-gradient-to-r from-brand-700 to-brand-500 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-500/25 transition-all duration-300"
           >
-            ابدأ مجانًا
+            سجّل مدرستك
           </Link>
         </div>
 
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-white/70 hover:text-white p-2"
-          aria-label="Toggle menu"
+          className="rounded-xl p-2 text-[#123B5D] hover:bg-[#E9F4EF] dark:text-white/80 dark:hover:bg-white/10 md:hidden"
+          aria-label="فتح القائمة"
         >
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -80,7 +70,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#020617]/95 backdrop-blur-xl border-b border-white/[0.06] overflow-hidden"
+            className="overflow-hidden border-b border-[#0B5D4B]/10 bg-white/95 backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#071F24]/95 md:hidden"
           >
             <div className="px-4 py-4 space-y-3">
               {links.map((link) => (
@@ -88,15 +78,15 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="block text-sm text-white/60 hover:text-emerald-300 py-2 transition-colors"
+                  className="block py-2 text-sm font-semibold text-[#123B5D]/70 transition-colors hover:text-[#0B5D4B] dark:text-white/65 dark:hover:text-emerald-300"
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="pt-3 border-t border-white/[0.06] space-y-2">
+              <div className="space-y-2 border-t border-[#0B5D4B]/10 pt-3 dark:border-white/[0.06]">
                 <Link
                   href="/login"
-                  className="block text-sm text-white/70 hover:text-white py-2"
+                  className="block py-2 text-sm font-semibold text-[#123B5D] hover:text-[#0B5D4B] dark:text-white/75 dark:hover:text-white"
                 >
                   تسجيل الدخول
                 </Link>
@@ -104,7 +94,7 @@ export default function Navbar() {
                   href="/register"
                   className="block text-center text-sm font-semibold bg-gradient-to-r from-brand-700 to-brand-500 text-white px-5 py-2.5 rounded-xl"
                 >
-                  ابدأ مجانًا
+                  سجّل مدرستك
                 </Link>
               </div>
             </div>

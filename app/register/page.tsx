@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, CheckCircle2, User, Building2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, User, Building2, KeyRound, ShieldCheck } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -130,17 +131,33 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center overflow-x-hidden overflow-y-auto bg-[var(--background)] p-4 py-8 sm:items-center">
-      {/* Background ambient glow */}
-      <div className="pointer-events-none absolute top-[-20%] start-[10%] h-[500px] w-[500px] rounded-full bg-brand-500/[0.06] blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] end-[10%] h-[400px] w-[400px] rounded-full bg-blue-500/[0.03] blur-[100px]" />
-
-      <div className="relative w-full max-w-[560px] animate-fade-in-up">
+    <div className="min-h-screen overflow-x-hidden bg-[#F7FAF8] p-3 text-[#123B5D] dark:bg-[#071F24] sm:p-5">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1480px] overflow-hidden rounded-[28px] border border-[#0B5D4B]/10 bg-white shadow-[0_28px_90px_rgba(11,93,75,0.14)] dark:border-white/10 dark:bg-[#0B2730] md:grid-cols-[0.9fr_1.1fr] sm:min-h-[calc(100vh-2.5rem)]">
+        <section className="relative hidden min-h-full overflow-hidden md:block">
+          <Image src="/brand/basma-saudi-campus.png" alt="بوابة مدرسة سعودية حديثة" fill priority sizes="(min-width: 768px) 45vw, 0px" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#073F37]/95 via-[#0B5D4B]/50 to-[#123B5D]/10" />
+          <div className="relative flex h-full flex-col justify-between p-9 text-white lg:p-12">
+            <BrandLogo variant="wordmark" size="md" className="[&>span>span:first-child]:text-white [&>span>span:last-child]:text-emerald-100" />
+            <div className="max-w-lg pb-6">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold backdrop-blur"><KeyRound className="h-4 w-4 text-[#D1B56F]" /> التسجيل متاح بكود دعوة</span>
+              <h2 className="mt-5 text-4xl font-black leading-tight">ابدأ إدارة مدرستك مع بصمة</h2>
+              <p className="mt-3 text-base leading-8 text-emerald-50">أدخل بيانات المدرسة وحساب المدير، ثم راجع المعلومات قبل إنشاء الحساب.</p>
+              <div className="mt-7 space-y-3 text-sm font-bold">
+                <p className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#D1B56F]" /> تسجيل آمن ومخصص لكل مدرسة</p>
+                <p className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[#D1B56F]" /> حماية بيانات الإدارة والمستفيدين</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="relative flex items-start justify-center bg-[#FBFCFA] px-4 py-8 dark:bg-[#0B2730] sm:px-8 lg:px-12">
+          <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-[#14866D]/10 blur-3xl" />
+          <div className="relative w-full max-w-[620px] animate-fade-in-up">
+            <div className="mb-6 flex justify-center md:hidden"><BrandLogo variant="wordmark" size="md" /></div>
         {/* Card */}
-        <div className="glass-shine rounded-2xl border border-stroke bg-white/80 dark:bg-glaze/[0.03] backdrop-blur-2xl p-8 shadow-[0_16px_64px_rgba(0,0,0,0.2)]">
+        <div className="rounded-3xl border border-[#0B5D4B]/10 bg-white p-5 shadow-[0_16px_50px_rgba(18,59,93,0.10)] dark:border-white/10 dark:bg-white/[0.04] sm:p-8">
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center text-center">
-            <BrandLogo variant="mark" size="lg" className="mb-4" />
+            <BrandLogo variant="mark" size="md" className="mb-4" />
             <h1 className="text-[22px] font-bold tracking-tight text-ink">تسجيل مدرسة جديدة</h1>
             <p className="mt-1.5 text-[13px] text-ink-dim">أنشئ حسابك المدرسي وابدأ إدارة مدرستك</p>
           </div>
@@ -154,8 +171,8 @@ export default function RegisterPage() {
               return (
                 <div key={s.id} className="flex flex-1 items-center gap-2">
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${
-                    isDone ? 'bg-emerald-500/15 text-emerald-500' :
-                    isActive ? 'bg-brand-500/15 text-brand-600' :
+                    isDone ? 'bg-[#D3E9DF] text-[#14866D] dark:bg-[#14866D]/20' :
+                    isActive ? 'bg-[#0B5D4B] text-white shadow-md shadow-[#0B5D4B]/20' :
                     'bg-glaze/[0.06] text-ink-faint'
                   }`}>
                     {isDone ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
@@ -164,7 +181,7 @@ export default function RegisterPage() {
                     isActive ? 'text-ink' : 'text-ink-faint'
                   }`}>{s.label}</span>
                   {i < STEPS.length - 1 && (
-                    <div className={`mx-1 h-px flex-1 ${isDone ? 'bg-emerald-500/30' : 'bg-stroke'}`} />
+                    <div className={`mx-1 h-px flex-1 ${isDone ? 'bg-[#14866D]/40' : 'bg-stroke'}`} />
                   )}
                 </div>
               );
@@ -339,6 +356,8 @@ export default function RegisterPage() {
         <p className="mt-6 text-center text-[11px] text-ink-faint">
           © {new Date().getFullYear()} منصة بصمة التعليمية
         </p>
+          </div>
+        </section>
       </div>
     </div>
   );

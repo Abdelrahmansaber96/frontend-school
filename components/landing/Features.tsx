@@ -17,43 +17,43 @@ const features = [
     icon: Users,
     title: 'إدارة الطلاب',
     description: 'إدارة شاملة لبيانات الطلاب والملفات الشخصية والسجلات الأكاديمية',
-    color: 'from-blue-400 to-blue-600',
+    color: 'from-[#123B5D] to-[#1E5D7D]',
   },
   {
     icon: CalendarCheck,
     title: 'متابعة الحضور',
     description: 'تسجيل الحضور والغياب يوميًا مع تقارير تفصيلية وإشعارات تلقائية',
-    color: 'from-emerald-400 to-emerald-600',
+    color: 'from-[#14866D] to-[#0B5D4B]',
   },
   {
     icon: ShieldCheck,
     title: 'تسجيل السلوك',
     description: 'متابعة سلوك الطلاب وتسجيل الملاحظات الإيجابية والسلبية',
-    color: 'from-violet-400 to-violet-600',
+    color: 'from-[#0B5D4B] to-[#123B5D]',
   },
   {
     icon: MessageCircle,
     title: 'تواصل مباشر',
     description: 'نظام مراسلة فوري بين المعلمين وأولياء الأمور والإدارة',
-    color: 'from-rose-400 to-rose-600',
+    color: 'from-[#14866D] to-[#46A787]',
   },
   {
     icon: BarChart3,
     title: 'تقارير احترافية',
     description: 'تقارير شاملة ورسوم بيانية تفاعلية لتحليل الأداء',
-    color: 'from-amber-400 to-amber-600',
+    color: 'from-[#B89647] to-[#8C6D2E]',
   },
   {
     icon: Bell,
     title: 'إشعارات فورية',
     description: 'إشعارات لحظية لجميع الأحداث المهمة والتحديثات',
-    color: 'from-cyan-400 to-cyan-600',
+    color: 'from-[#1E5D7D] to-[#14866D]',
   },
 ];
 
 export default function Features() {
   return (
-    <Section id="features" className="bg-[#0F172A]">
+    <Section id="features" className="bg-white dark:bg-[#0B2730]">
       <FadeInUp>
         <SectionTitle subtitle="كل ما تحتاجه لإدارة مدرستك في مكان واحد">
           مميزات المنصة
@@ -69,8 +69,8 @@ export default function Features() {
               >
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-              <p className="text-white/50 leading-relaxed">{feature.description}</p>
+              <h3 className="mb-2 text-xl font-bold text-[#123B5D] dark:text-white">{feature.title}</h3>
+              <p className="leading-relaxed text-slate-500 dark:text-slate-300">{feature.description}</p>
             </GlassCard>
           </FadeInUp>
         ))}
