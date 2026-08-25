@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Fingerprint, LockKeyhole, Phone, ShieldCheck } from 'lucide-react';
+import { LockKeyhole, Phone } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import { getDefaultAppRoute } from '@/lib/app-routes';
-import { clearFrontendSessionTokens, syncFrontendAccessToken } from '@/lib/auth-session';
+import { syncFrontendAccessToken } from '@/lib/auth-session';
 import { extractAccessToken, extractAccessTokenFromHeaders } from '@/lib/auth-session-shared';
 import { useAuthStore } from '@/store/auth.store';
 import Button from '@/components/ui/Button';
@@ -23,31 +23,19 @@ const schema = z.object({
   identifierType: z.enum(['nationalId', 'phone']),
 });
 type FormData = z.infer<typeof schema>;
-type LoginMode = 'beneficiary' | 'platform_admin';
-
 export default function LoginExperience() {
   const router = useRouter();
-  const { setAuth, clearAuth } = useAuthStore();
-  const [mode, setMode] = useState<LoginMode>('beneficiary');
+  const { setAuth } = useAuthStore();
   const [serverError, setServerError] = useState('');
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema), defaultValues: { identifierType: 'nationalId' },
   });
   const identifierType = watch('identifierType');
-  const isAdmin = mode === 'platform_admin';
-
   const onSubmit = async (data: FormData) => {
     setServerError('');
     try {
       const res = await authApi.login(data);
       const { user } = res.data.data;
-      if (isAdmin && user.role !== 'super_admin') {
-        try { await authApi.logout(); } catch { /* local cleanup remains required */ }
-        clearFrontendSessionTokens();
-        clearAuth();
-        setServerError('هذا الدخول مخصص لمسؤول المنصة فقط. استخدم تبويب دخول المستفيدين لحسابك.');
-        return;
-      }
       const accessToken = extractAccessToken(res.data) || extractAccessTokenFromHeaders(res.headers as Record<string, unknown> | undefined);
       if (accessToken) syncFrontendAccessToken(accessToken);
       setAuth(user);
@@ -83,13 +71,9 @@ export default function LoginExperience() {
           <div className="relative w-full max-w-md">
             <div className="mb-8 flex justify-center md:hidden"><BrandLogo variant="wordmark" size="md" /></div>
             <div className="mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-[#0B5D4B]/10 bg-[#E9F4EF] shadow-sm dark:bg-[#14866D]/10"><BrandLogo variant={isAdmin ? 'adminShield' : 'mark'} size="lg" /></div>
-              <h2 className="text-2xl font-black text-[#0B5D4B] dark:text-emerald-100">{isAdmin ? 'دخول مسؤول المنصة' : 'تسجيل الدخول'}</h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{isAdmin ? 'إدارة المدارس والاشتراكات والتشغيل' : 'أدخل بيانات حسابك للمتابعة'}</p>
-            </div>
-            <div className="mb-6 grid grid-cols-2 rounded-2xl border border-[#0B5D4B]/10 bg-[#EEF5F1] p-1.5 dark:bg-white/5">
-              <button type="button" onClick={() => { setMode('beneficiary'); setServerError(''); }} aria-pressed={!isAdmin} className={`min-h-11 rounded-xl px-3 text-xs font-black transition ${!isAdmin ? 'bg-[#0B5D4B] text-white shadow-md shadow-[#0B5D4B]/20' : 'text-slate-500 hover:text-[#0B5D4B] dark:text-slate-300'}`}><Fingerprint className="mx-auto mb-1 h-4 w-4" />دخول المستفيدين</button>
-              <button type="button" onClick={() => { setMode('platform_admin'); setServerError(''); }} aria-pressed={isAdmin} className={`min-h-11 rounded-xl px-3 text-xs font-black transition ${isAdmin ? 'bg-[#123B5D] text-white shadow-md shadow-[#123B5D]/20' : 'text-slate-500 hover:text-[#123B5D] dark:text-slate-300'}`}><ShieldCheck className="mx-auto mb-1 h-4 w-4" />مسؤول المنصة</button>
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-[#0B5D4B]/10 bg-[#E9F4EF] shadow-sm dark:bg-[#14866D]/10"><BrandLogo variant="mark" size="lg" /></div>
+              <h2 className="text-2xl font-black text-[#0B5D4B] dark:text-emerald-100">تسجيل الدخول</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">أدخل بيانات حسابك للمتابعة</p>
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 rounded-xl border border-[#0B5D4B]/10 p-1 dark:border-white/10">
@@ -99,10 +83,10 @@ export default function LoginExperience() {
               <Input label={identifierType === 'nationalId' ? 'رقم الهوية الوطنية' : 'رقم الجوال'} placeholder={identifierType === 'nationalId' ? 'أدخل رقم الهوية الوطنية' : 'أدخل رقم الجوال'} inputMode="numeric" error={errors.identifier?.message} {...register('identifier')} />
               <Input label="كلمة المرور" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
               {serverError && <div role="alert" className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-200">{serverError}</div>}
-              <Button type="submit" className="w-full" size="lg" loading={isSubmitting}><LockKeyhole className="h-4 w-4" />{isAdmin ? 'دخول لوحة المسؤول' : 'تسجيل الدخول'}</Button>
+              <Button type="submit" className="w-full" size="lg" loading={isSubmitting}><LockKeyhole className="h-4 w-4" />تسجيل الدخول</Button>
               <Link href="/forgot-password" className="block text-center text-sm font-bold text-[#0B5D4B] hover:text-[#14866D]">نسيت كلمة المرور؟</Link>
             </form>
-            {!isAdmin && <div className="mt-7 rounded-2xl border border-[#B89647]/25 bg-[#FFF9EA] p-4 text-center text-xs text-[#123B5D] dark:bg-[#B89647]/10 dark:text-amber-100"><p className="font-bold">هل ترغب في تسجيل مدرسة جديدة؟</p><Link href="/register" className="mt-2 inline-flex items-center gap-1 font-black text-[#0B5D4B] underline underline-offset-4">سجّل مدرستك بكود الدعوة <Phone className="h-3.5 w-3.5" /></Link></div>}
+            <div className="mt-7 rounded-2xl border border-[#B89647]/25 bg-[#FFF9EA] p-4 text-center text-xs text-[#123B5D] dark:bg-[#B89647]/10 dark:text-amber-100"><p className="font-bold">هل ترغب في تسجيل مدرسة جديدة؟</p><Link href="/register" className="mt-2 inline-flex items-center gap-1 font-black text-[#0B5D4B] underline underline-offset-4">سجّل مدرستك بكود الدعوة <Phone className="h-3.5 w-3.5" /></Link></div>
             <p className="mt-7 text-center text-[11px] text-slate-400">© {new Date().getFullYear()} منصة بصمة التعليمية</p>
           </div>
         </section>
