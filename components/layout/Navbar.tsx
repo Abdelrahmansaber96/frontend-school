@@ -60,7 +60,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     event.preventDefault();
     const value = search.trim();
     if (!value) return;
-    const destination = user?.role === 'super_admin' ? '/schools' : '/students';
+    const destination = user?.role === 'super_admin' ? '/schools' : user?.role === 'student' ? '/subjects' : '/students';
     router.push(`${destination}?search=${encodeURIComponent(value)}`);
   };
 
@@ -78,14 +78,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {(user?.role === 'school_admin' || user?.role === 'teacher' || user?.role === 'administrative' || user?.role === 'super_admin') && (
+      {(user?.role === 'school_admin' || user?.role === 'teacher' || user?.role === 'administrative' || user?.role === 'super_admin' || user?.role === 'student') && (
         <form onSubmit={handleSearch} className="mx-auto hidden w-full max-w-sm lg:block">
           <label className="relative block">
             <span className="sr-only">البحث في النظام</span>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={user?.role === 'super_admin' ? 'ابحث عن مدرسة...' : 'ابحث عن طالب...'}
+              placeholder={user?.role === 'super_admin' ? 'ابحث عن مدرسة...' : user?.role === 'student' ? 'ابحث عن مادة...' : 'ابحث عن طالب...'}
               className="h-11 w-full rounded-2xl border border-slate-100 bg-slate-50/80 pe-11 ps-4 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-100/60 dark:border-white/5 dark:bg-white/[0.04] dark:text-slate-100 dark:focus:border-violet-500/40 dark:focus:ring-violet-500/10"
             />
             <Search className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-violet-600" />

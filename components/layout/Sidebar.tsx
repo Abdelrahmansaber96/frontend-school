@@ -33,8 +33,8 @@ const navItems: NavItem[] = [
   { label: 'أبنائي', href: '/children', icon: Baby, roles: ['parent'] },
   { label: 'الفصول الدراسية', href: '/classes', icon: BookOpen, roles: ['super_admin', 'school_admin', 'teacher'] },
   { label: 'الدرجات والاختبارات', href: '/grades', icon: NotebookPen, roles: ['school_admin', 'teacher', 'student'] },
-  { label: 'الحضور والغياب', href: '/attendance', icon: CheckSquare, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
-  { label: 'السلوك', href: '/behavior', icon: Flag, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'administrative'] },
+  { label: 'الحضور والغياب', href: '/attendance', icon: CheckSquare, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
+  { label: 'السلوك', href: '/behavior', icon: Flag, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
   { label: 'الرسائل', href: '/messages', icon: MessageSquare, roles: ['school_admin', 'teacher', 'parent'] },
   { label: 'الملفات', href: '/uploads', icon: UploadCloud, roles: ['school_admin', 'teacher'] },
   { label: 'الإشعارات', href: '/notifications', icon: Bell, roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student', 'administrative'] },
@@ -91,6 +91,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           const teacherLabel = role === 'teacher'
             ? ({ '/dashboard': 'الرئيسية', '/classes': 'فصولي', '/attendance': 'الحضور والغياب', '/grades': 'الدرجات', '/behavior': 'السلوك والملاحظات' } as Record<string, string>)[item.href]
             : undefined;
+          const studentLabel = role === 'student'
+            ? ({ '/dashboard': 'الرئيسية', '/subjects': 'المواد الدراسية', '/grades': 'النتائج', '/attendance': 'الحضور والغياب', '/behavior': 'السلوك', '/notifications': 'الإشعارات', '/profile': 'الملف الشخصي' } as Record<string, string>)[item.href]
+            : undefined;
           return (
             <Link
               key={item.href}
@@ -105,7 +108,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               )}
             >
               <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-white' : 'text-ink-faint group-hover:text-violet-600 dark:group-hover:text-violet-300')} />
-              <span className="flex-1">{teacherLabel || item.label}</span>
+              <span className="flex-1">{teacherLabel || studentLabel || item.label}</span>
               {active && <ChevronRight className="h-3 w-3 text-white/70 me-auto rtl:rotate-180" />}
             </Link>
           );

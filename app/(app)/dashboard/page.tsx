@@ -19,6 +19,7 @@ import RoleHighlights from '@/components/dashboard/RoleHighlights';
 import RecentGrades from '@/components/dashboard/RecentGrades';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 import TeacherDashboard from '@/components/dashboard/TeacherDashboard';
+import StudentDashboard from '@/components/dashboard/StudentDashboard';
 
 const RANGE_KEY = 'basma-dashboard-range';
 
@@ -33,8 +34,8 @@ export default function DashboardPage() {
   }, []);
 
   const query = useQuery({
-    queryKey: ['dashboard', range],
-    queryFn: () => dashboardApi.getSummary(range).then((response) => response.data.data),
+    queryKey: ['dashboard', user?.role === 'student' ? '30d' : range],
+    queryFn: () => dashboardApi.getSummary(user?.role === 'student' ? '30d' : range).then((response) => response.data.data),
     enabled: Boolean(user),
     staleTime: 60_000,
     retry: 1,
@@ -107,6 +108,16 @@ export default function DashboardPage() {
         schoolName={displaySchoolName}
         loading={query.isFetching}
         onRefresh={() => query.refetch()}
+      />
+    );
+  }
+
+  if (dashboard.role === 'student') {
+    return (
+      <StudentDashboard
+        dashboard={dashboard}
+        firstName={user?.name?.first || 'الطالب'}
+        schoolName={displaySchoolName}
       />
     );
   }
