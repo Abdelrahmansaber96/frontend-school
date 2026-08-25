@@ -88,6 +88,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {visibleNavItems.map((item, i) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
+          const teacherLabel = role === 'teacher'
+            ? ({ '/dashboard': 'الرئيسية', '/classes': 'فصولي', '/attendance': 'الحضور والغياب', '/grades': 'الدرجات', '/behavior': 'السلوك والملاحظات' } as Record<string, string>)[item.href]
+            : undefined;
           return (
             <Link
               key={item.href}
@@ -102,7 +105,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               )}
             >
               <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-white' : 'text-ink-faint group-hover:text-violet-600 dark:group-hover:text-violet-300')} />
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1">{teacherLabel || item.label}</span>
               {active && <ChevronRight className="h-3 w-3 text-white/70 me-auto rtl:rotate-180" />}
             </Link>
           );

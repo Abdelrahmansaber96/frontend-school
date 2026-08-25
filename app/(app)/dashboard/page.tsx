@@ -18,6 +18,7 @@ import WeeklyTrend from '@/components/dashboard/WeeklyTrend';
 import RoleHighlights from '@/components/dashboard/RoleHighlights';
 import RecentGrades from '@/components/dashboard/RecentGrades';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
+import TeacherDashboard from '@/components/dashboard/TeacherDashboard';
 
 const RANGE_KEY = 'basma-dashboard-range';
 
@@ -94,6 +95,18 @@ export default function DashboardPage() {
           subjectsQuery.refetch();
           gradesQuery.refetch();
         }}
+      />
+    );
+  }
+
+  if (dashboard.role === 'teacher') {
+    return (
+      <TeacherDashboard
+        dashboard={dashboard}
+        firstName={user?.name?.first || 'المعلم'}
+        schoolName={displaySchoolName}
+        loading={query.isFetching}
+        onRefresh={() => query.refetch()}
       />
     );
   }
