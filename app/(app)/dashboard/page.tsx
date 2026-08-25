@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
-import { dashboardApi } from '@/lib/api';
+import { dashboardApi, gradesApi, subjectsApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { useSchoolBrandingStore } from '@/store/branding.store';
 import type { DashboardRange } from '@/types';
@@ -17,6 +17,7 @@ import ClassOverview from '@/components/dashboard/ClassOverview';
 import WeeklyTrend from '@/components/dashboard/WeeklyTrend';
 import RoleHighlights from '@/components/dashboard/RoleHighlights';
 import RecentGrades from '@/components/dashboard/RecentGrades';
+import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 
 const RANGE_KEY = 'basma-dashboard-range';
 
@@ -36,6 +37,20 @@ export default function DashboardPage() {
     enabled: Boolean(user),
     staleTime: 60_000,
     retry: 1,
+  });
+
+  const subjectsQuery = useQuery({
+    queryKey: ['dashboard-subject-count'],
+    queryFn: () => subjectsApi.list({ page: 1, limit: 1 }),
+    enabled: user?.role === 'school_admin',
+    staleTime: 60_000,
+  });
+
+  const gradesQuery = useQuery({
+    queryKey: ['dashboard-assessment-count'],
+    queryFn: () => gradesApi.list({ page: 1, limit: 1 }),
+    enabled: user?.role === 'school_admin',
+    staleTime: 60_000,
   });
 
   const changeRange = (nextRange: DashboardRange) => {
@@ -60,6 +75,28 @@ export default function DashboardPage() {
   const dashboard = query.data;
   const displaySchoolName = schoolNameAr || schoolName;
   const showClassOverview = ['school_admin', 'teacher', 'administrative'].includes(dashboard.role);
+
+  if (dashboard.role === 'school_admin') {
+    const subjectPayload = subjectsQuery.data?.data;
+    const gradePayload = gradesQuery.data?.data;
+    const subjectCount = subjectPayload?.meta?.total ?? subjectPayload?.pagination?.total ?? subjectPayload?.data?.length ?? 0;
+    const assessmentCount = gradePayload?.meta?.total ?? gradePayload?.pagination?.total ?? gradePayload?.data?.length ?? dashboard.academic.length;
+    return (
+      <SchoolAdminDashboard
+        dashboard={dashboard}
+        firstName={user?.name?.first || 'مدير المدرسة'}
+        schoolName={displaySchoolName}
+        subjectCount={subjectCount}
+        assessmentCount={assessmentCount}
+        loading={query.isFetching}
+        onRefresh={() => {
+          query.refetch();
+          subjectsQuery.refetch();
+          gradesQuery.refetch();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 pb-4">

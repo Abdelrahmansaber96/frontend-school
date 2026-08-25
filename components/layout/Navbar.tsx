@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Menu, Bell, LogOut, User, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Menu, Bell, LogOut, User, ChevronDown, Sun, Moon, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/store/auth.store';
@@ -22,6 +22,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const qc = useQueryClient();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [search, setSearch] = useState('');
 
   const { data: unread = 0 } = useQuery({
     queryKey: ['notifications-unread-count'],
@@ -55,8 +56,16 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     router.replace('/login');
   };
 
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const value = search.trim();
+    if (!value) return;
+    const destination = user?.role === 'super_admin' ? '/schools' : '/students';
+    router.push(`${destination}?search=${encodeURIComponent(value)}`);
+  };
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-stroke bg-white/80 dark:bg-navy-900/60 backdrop-blur-2xl px-4 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 shadow-[0_4px_20px_rgba(68,62,140,0.04)] backdrop-blur-2xl dark:border-white/10 dark:bg-navy-900/80 lg:h-20 lg:px-8">
       {/* Subtle top shine */}
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-l from-transparent via-glaze/[0.08] to-transparent" />
 
@@ -68,6 +77,21 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       >
         <Menu className="h-5 w-5" />
       </button>
+
+      {(user?.role === 'school_admin' || user?.role === 'teacher' || user?.role === 'administrative' || user?.role === 'super_admin') && (
+        <form onSubmit={handleSearch} className="mx-auto hidden w-full max-w-sm lg:block">
+          <label className="relative block">
+            <span className="sr-only">البحث في النظام</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={user?.role === 'super_admin' ? 'ابحث عن مدرسة...' : 'ابحث عن طالب...'}
+              className="h-11 w-full rounded-2xl border border-slate-100 bg-slate-50/80 pe-11 ps-4 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-100/60 dark:border-white/5 dark:bg-white/[0.04] dark:text-slate-100 dark:focus:border-violet-500/40 dark:focus:ring-violet-500/10"
+            />
+            <Search className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-violet-600" />
+          </label>
+        </form>
+      )}
 
       {/* Right section */}
       <div className="ms-auto flex items-center gap-2">

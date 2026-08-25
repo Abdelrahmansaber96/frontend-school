@@ -60,12 +60,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const schoolLogoSrc = logo || branding.logoUrl || null;
 
   const content = (
-    <div className="relative flex h-full flex-col bg-white/90 dark:bg-navy-950/80 backdrop-blur-2xl border-e border-stroke">
+    <div className="relative flex h-full flex-col border-e border-slate-200/80 bg-white/95 shadow-[-6px_0_24px_rgba(68,62,140,0.03)] backdrop-blur-2xl dark:border-white/10 dark:bg-navy-950/90">
       {/* Top shine line */}
       <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-l from-transparent via-glaze/10 to-transparent" />
 
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-5 border-b border-stroke">
+      <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5 dark:border-white/10 lg:h-20">
         <div className="flex items-center gap-3">
           <SchoolLogo
             alt={displayName}
@@ -97,16 +97,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               className={cn(
                 'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 animate-fade-in',
                 active
-                  ? 'bg-glaze/[0.08] text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-                  : 'text-ink-dim hover:bg-glaze/[0.04] hover:text-ink',
+                  ? 'bg-gradient-to-l from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/15'
+                  : 'text-ink-dim hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:text-violet-300',
               )}
             >
-              {active && (
-                <span className="absolute inset-y-2 start-0 w-[3px] rounded-full bg-gradient-to-b from-gold-400 to-gold-600" />
-              )}
-              <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-gold-400' : 'text-ink-faint group-hover:text-ink-dim')} />
+              <item.icon className={cn('h-4 w-4 shrink-0 transition-colors duration-200', active ? 'text-white' : 'text-ink-faint group-hover:text-violet-600 dark:group-hover:text-violet-300')} />
               <span className="flex-1">{item.label}</span>
-              {active && <ChevronRight className="h-3 w-3 text-white/30 me-auto rtl:rotate-180" />}
+              {active && <ChevronRight className="h-3 w-3 text-white/70 me-auto rtl:rotate-180" />}
             </Link>
           );
         })}
